@@ -10,7 +10,7 @@ public class BaseCombatEntity : MonoBehaviour
     public bool isMovable;
 
     [Header("Movement")]
-    [Tooltip("The max pullback for the icon interactable")]
+    [Tooltip("The max pullback (radius) for the icon interactable")]
     public float maxPullback;
 
     //============================================================================
@@ -22,7 +22,7 @@ public class BaseCombatEntity : MonoBehaviour
         iconController.SetOnReleaseAction(Release);
     }
 
-    private void Release()
+    private void Release(Vector2 releaseVector)
     {
         
     }
