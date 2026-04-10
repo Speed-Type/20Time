@@ -22,8 +22,9 @@ public class BaseCombatEntity : MonoBehaviour
         iconController.SetOnReleaseAction(Release);
     }
 
-    private void Release(Vector2 releaseVector)
+    private void Release(Vector3 launchDirection, float launchSpeed)
     {
-        
+        Debug.Log(launchDirection);
+        Debug.Log(launchSpeed);
     }
 }
