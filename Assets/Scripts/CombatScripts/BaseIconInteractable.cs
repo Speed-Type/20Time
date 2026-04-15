@@ -50,7 +50,8 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if(!baseCombatEntity.isMovable) return;
+        if(baseCombatEntity.isStatic) return;
+        if(!baseCombatEntity.isCorrectTurn) return;
 
         isDragging = true;
 
@@ -62,7 +63,8 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
 
     public void OnDrag(PointerEventData eventData)
     {
-        if(!baseCombatEntity.isMovable) return;
+        if(baseCombatEntity.isStatic) return;
+        if(!baseCombatEntity.isCorrectTurn) return;
         if(!isDragging) return;
 
         Vector3 pointerWorld = ScreenToWorld(eventData.position);
@@ -84,7 +86,8 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if(!baseCombatEntity.isMovable) return;
+        if(baseCombatEntity.isStatic) return;
+        if(!baseCombatEntity.isCorrectTurn) return;
         if(!isDragging) return;
 
         isDragging = false;
