@@ -9,6 +9,14 @@ public class CombatManager : MonoBehaviour
     public List<Player> playerList;
     public int currentPlayerIndex;
 
+    [Header("Component References")]
+    public Canvas combatCanvas;
+
+    [Header("Object References")]
+    public Transform combatCanvasTransform;
+    public Transform combatEnvironmentTransform;
+    public Transform defaultSpawnTransform;
+
     //============================================================================
     
     private void Awake()
@@ -42,5 +50,12 @@ public class CombatManager : MonoBehaviour
 
         //Do next turn
         StartPlayerTurn();
+    }
+
+    //============================Getters/Setters=================================
+
+    public Player GetCurrentPlayer()
+    {
+        return playerList[currentPlayerIndex];
     }
 }

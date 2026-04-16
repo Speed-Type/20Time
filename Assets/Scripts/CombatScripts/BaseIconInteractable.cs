@@ -32,7 +32,7 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
     {
         //Initialize references
         rectTransform = GetComponent<RectTransform>();
-        canvas = GetComponentInParent<Canvas>();
+        canvas = CombatManager.instance.combatCanvas;
         worldCamera = Camera.main;
     }
 

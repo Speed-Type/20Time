@@ -15,7 +15,7 @@ public class WorldspaceCanvasSyncUtility : MonoBehaviour
     private void Awake()
     {
         worldCamera = Camera.main;
-        canvas = GetComponentInParent<Canvas>();
+        canvas = CombatManager.instance.combatCanvas;
         if(draggableRect == null) draggableRect = GetComponent<RectTransform>();
     }
 
@@ -28,7 +28,6 @@ public class WorldspaceCanvasSyncUtility : MonoBehaviour
 
     public void SnapUIToObject(Vector3 worldPosition)
     {
-        Debug.Log("Snapping");
         //Calculate world to screen
         Vector3 screenPos = worldCamera.WorldToScreenPoint(worldPosition);
 
