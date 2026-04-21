@@ -24,6 +24,9 @@ public class CollisionSystem : MonoBehaviour
     [Range(0.1f, 1f)]
     public float depenetrationFactor = 0.5f;
 
+    [Tooltip("Multiplier for elasticity of knockback on collision")]
+    public float knockbackElasticityMultiplier = 1f;
+
     //============================================================================
 
     [HideInInspector] public bool tokensAreMoving;
@@ -49,7 +52,6 @@ public class CollisionSystem : MonoBehaviour
     {
         if(!tokensAreMoving) return;
 
-        //TODO: change the check for list length to a check whether there are any tokens still moving
         bool restCheck = true;
         foreach(Token t in allTokensList)
         {
@@ -99,9 +101,11 @@ public class CollisionSystem : MonoBehaviour
             if (!t.isLaunched) continue;
             if (t.velocity.sqrMagnitude < restSpeedThreshold * restSpeedThreshold)
             {
-                t.velocity         = Vector2.zero;
-                t.isLaunched       = false;
+                t.velocity = Vector2.zero;
+                t.isLaunched = false;
+                t.isOriginalLaunched = false;
                 t.launchInstigator = null;
+                Debug.Log("Token named [" + t + "] is now resting");
             }
         }
     }
@@ -143,31 +147,118 @@ public class CollisionSystem : MonoBehaviour
         float dist   = Mathf.Sqrt(distSq);
         Vector2 norm = dist > 1e-6f ? delta / dist : Vector2.right; //safe normal
 
+        //TODO: Piercing logic here
+
         //Positional depenetration
         float overlap = minDist - dist;
         float totalMass = a.mass + b.mass;
+        // massRatioA = how much of B's mass vs total; approaches 1 as B → ∞
+        float massRatioA  = b.mass / totalMass;  // blend toward full reflect as target gets heavier
+        float massRatioB  = a.mass / totalMass;
+
+        //OPTION 1:
+
         float pushA = (b.mass / totalMass) * overlap * depenetrationFactor;
         float pushB = (a.mass / totalMass) * overlap * depenetrationFactor;
 
         a.Position2D -= norm * pushA;
         b.Position2D += norm * pushB;
 
-        //Elastic impulse
-        // Relative velocity along collision normal
-        Vector2 relVel = a.velocity - b.velocity;
-        float relVelN = Vector2.Dot(relVel, norm);
+        //OPTION 2:
 
-        //Only resolve if tokens are moving toward each other
-        if(relVelN > 0f) return false;
+        // float pushA = (a.isOriginalLaunched && a.movementType == MovementType.Pusher) ? 0f : (b.mass / totalMass) * overlap * depenetrationFactor;
+        // float pushB = (b.isOriginalLaunched && b.movementType == MovementType.Pusher) ? 0f : (a.mass / totalMass) * overlap * depenetrationFactor;
+
+        // //If both are immovable just separate them evenly (shouldn't normally happen).
+        // if (a.isOriginalLaunched && a.movementType == MovementType.Pusher && b.isOriginalLaunched && b.movementType == MovementType.Pusher) { pushA = pushB = overlap * 0.5f * depenetrationFactor; }
+
+        // a.Position2D -= norm * pushA;
+        // b.Position2D += norm * pushB;
+
+        //=====================Velocity handling==================
+
+        float velNA = Vector2.Dot(a.velocity, norm);  // A's normal-axis speed
+        float velNB = Vector2.Dot(b.velocity, norm);  // B's normal-axis speed
+
+        // Only resolve if tokens are closing (relative normal speed < 0 from A's POV)
+        float closingSpeed = velNA - velNB;
+        if (closingSpeed <= 0f) return false;
+
+        Debug.Log("Token named [" + a.gameObject.name + "] collided with token named [" + b.gameObject.name + "]");
 
         float restitution = Mathf.Min(a.tokenRestitution, b.tokenRestitution);
-        float impulseMag = -(1f + restitution) * relVelN / (1f / a.mass + 1f / b.mass);
 
-        Vector2 impulse = impulseMag * norm;
-        a.velocity += impulse / a.mass;
-        b.velocity -= impulse / b.mass;
+        if(a.isOriginalLaunched)
+        {
+            Debug.Log("token named [" + a + "] is the original");
 
-        float impactSpeed = Mathf.Abs(relVelN);
+            //If a is a bouncer token, then do full bounce
+            if(a.movementType == MovementType.Bouncer)
+            {
+                Debug.Log("token named [" + a + "] is movement type bouncer");
+                a.velocity += norm * (-velNA * (restitution + 1f));
+            }
+            //Otherwise, nothing changes for a's velocity
+
+            //Unless a is a piercer, knock b back
+            if(a.movementType != MovementType.Piercer)
+            {
+                Debug.Log("applying knockback to [" + b + "]");
+                float kickB = velNA * massRatioA * (1f + restitution);
+                b.velocity += norm * kickB * knockbackElasticityMultiplier;
+            }
+        }
+        else if(b.isOriginalLaunched)
+        {
+            Debug.Log("token named [" + b + "] is the original");
+
+            //If b is a bouncer token, then do full bounce
+            if(b.movementType == MovementType.Bouncer)
+            {
+                Debug.Log("token named [" + b + "] is movement type bouncer");
+                b.velocity += norm * (-velNB * (restitution + 1f));
+            }
+            //Otherwise, nothing changes for a's velocity
+
+            //Unless b is a piercer, knock a back
+            if(b.movementType != MovementType.Piercer)
+            {
+                Debug.Log("applying knockback to [" + a + "]");
+                float kickA = velNB * massRatioB * (1f + restitution);
+                a.velocity -= norm * kickA * knockbackElasticityMultiplier;
+            }
+        }
+        else //This is a chained collision
+        {
+            //Kick both a and b back
+            float kickA = velNB * massRatioB * (1f + restitution);
+            a.velocity -= norm * kickA * knockbackElasticityMultiplier;
+
+            float kickB = velNA * massRatioA * (1f + restitution);
+            b.velocity += norm * kickB * knockbackElasticityMultiplier;
+        }
+
+        // if (!a.isOriginalLaunched || a.movementType == MovementType.Bouncer)
+        // {
+        //     // Reflect A's normal component, scaled by how heavy B is relative to total.
+        //     // At equal mass: 0.5 blend → partial reflect + partial pass-through.
+        //     // As B → ∞ mass (or isImmovable): full reflect (wall bounce).
+        //     float newVelNA = Mathf.Lerp(velNA, -velNA * restitution, 1);
+        //     a.velocity += norm * (newVelNA - velNA);
+
+        //     float kickA = velNB * massRatioB * (1f + restitution);
+        //     a.velocity -= norm * kickA;
+        // }
+
+        // if (!b.isOriginalLaunched || b.movementType == MovementType.Bouncer)
+        // {
+        //     float newVelNB = Mathf.Lerp(velNB, -velNB * restitution, 1);
+        //     b.velocity += norm * (newVelNB - velNB);
+        // }
+
+        float impactSpeed = closingSpeed;
+
+        //===================================================
 
         //Damage & collision events
         FireTokenCollisionEvents(a, b, norm, impactSpeed);
@@ -265,7 +356,7 @@ public class CollisionSystem : MonoBehaviour
             hit         = true;
         }
 
-        // Bottom wall (min Z)
+        // Bottom wall (min Y)
         if (pos.y - t.radius < arena.bottom)
         {
             pos.y       = arena.bottom + t.radius;
@@ -273,7 +364,7 @@ public class CollisionSystem : MonoBehaviour
             hitNormal   = Vector2.up;
             hit         = true;
         }
-        // Top wall (max Z)
+        // Top wall (max Y)
         else if (pos.y + t.radius > arena.top)
         {
             pos.y       = arena.top - t.radius;

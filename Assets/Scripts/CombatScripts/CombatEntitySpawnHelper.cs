@@ -14,9 +14,8 @@ public class CombatEntitySpawnHelper : MonoBehaviour
         return entity;
     }
 
-    public void SetEntityOwner(int pID, Player player)
+    public void SetEntityOwner(Player player)
     {
-        entity.SetTokenOwner(pID);
         entity.parentPlayer = player;
     }
 

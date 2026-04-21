@@ -18,15 +18,18 @@ public class CombatManager : MonoBehaviour
     public Transform defaultSpawnTransform;
 
     //============================================================================
+    [HideInInspector] public CanvasGroup combatCanvasGroup;
     
     private void Awake()
     {
         instance = this;
+
+        //Initialize references
+        combatCanvasGroup = combatCanvas.GetComponent<CanvasGroup>();
     }
 
     private void Start()
     {
-        //TODO: Get a fun way to choose who goes first
         currentPlayerIndex = 0;
 
         //Do initial turn
@@ -42,11 +45,26 @@ public class CombatManager : MonoBehaviour
     public void StartPlayerTurn()
     {
         playerList[currentPlayerIndex].StartTurn();
+        combatCanvasGroup.alpha = 1;
+    }
+
+    //Called upon valid token launch
+    public void SwitchCamToFollow()
+    {
+        combatCanvasGroup.alpha = 0;
     }
 
     public void EndPlayerTurn()
     {
         currentPlayerIndex = (currentPlayerIndex + 1) % playerList.Count;
+
+        //Switch cam back to top-down
+        SwitchCamToTopDown();
+    }
+
+    public void SwitchCamToTopDown()
+    {
+        //TODO: add the cam transition to top-down
 
         //Do next turn
         StartPlayerTurn();

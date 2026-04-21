@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -6,6 +7,10 @@ public class BaseCombatEntity : MonoBehaviour
     [Header("References")]
     public BaseIconInteractable iconController;
     public Player parentPlayer;
+    [SerializeField] private Image topdownHealthbar;
+
+    [Header("Entity Info")]
+    public String entityName;
 
     [Header("General Parameters")]
     [Tooltip("Whether or not a player can ever move this entity")]
@@ -51,6 +56,17 @@ public class BaseCombatEntity : MonoBehaviour
         currentHealth = maxHealth;
     }
 
+    private void Start()
+    {
+        //Now that at this point the parentPlayer has been set, update accordingly
+        token.ownerIndex = parentPlayer.playerID;
+        gameObject.name = parentPlayer.playerID + "'s " + entityName;
+        iconController.SetIconBGColor(parentPlayer.playerColor);
+
+        //Update healthbars
+        UpdateHealthbars();
+    }
+
     //============================================================================
 
     public void InitializeInteractable()
@@ -65,11 +81,6 @@ public class BaseCombatEntity : MonoBehaviour
         syncUtility.SnapUIToObject();
     }
 
-    public void SetTokenOwner(int pID)
-    {
-        token.ownerIndex = pID;
-    }
-
     //============================================================================
 
     private void Release(Vector3 launchDirection, float launchSpeed)
@@ -77,16 +88,22 @@ public class BaseCombatEntity : MonoBehaviour
         Debug.Log(launchDirection);
         Debug.Log(launchSpeed);
 
+        CombatManager.instance.SwitchCamToFollow();
+
         CollisionSystem.instance.tokensAreMoving = true;
         token.Launch(new Vector2(launchDirection.x, launchDirection.z), launchSpeed * speedMultiplier);
     }
 
     public void TakeDamage(float amount, Token source)
     {
+        Debug.Log(gameObject.name + "Took " + amount + " damage");
         if(amount <= 0f) return;
 
         //Actually decrease health
         currentHealth -= amount;
+
+        //Update healthbars
+        UpdateHealthbars();
         
         //Do other damage handling here
 
@@ -94,6 +111,12 @@ public class BaseCombatEntity : MonoBehaviour
         {
             Die();
         }
+    }
+
+    private void UpdateHealthbars()
+    {
+        float fillPercent = Mathf.Clamp01(currentHealth / maxHealth);
+        topdownHealthbar.fillAmount = fillPercent;
     }
 
     //Method that is called once health hits 0

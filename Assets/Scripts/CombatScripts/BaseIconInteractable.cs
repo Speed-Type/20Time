@@ -1,11 +1,13 @@
 using System;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
 {
     [Tooltip("Child TrajectoryArrow component for preview drawing")]
     [SerializeField] private TrajectoryArrow trajectoryArrow;
+    [SerializeField] private Image iconBackground;
 
     //============================================================================
 
@@ -19,7 +21,6 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
     private Action<Vector3, float> onReleaseAction;
 
     //Pullback variables
-    private Vector2 pullbackVector;
     private Vector3 originWorldPos;
     private Vector3 currentDragWorldPos;
 
@@ -44,6 +45,11 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
     public void SetOnReleaseAction(Action<Vector3, float> pOnReleaseAction)
     {
         onReleaseAction = pOnReleaseAction;
+    }
+
+    public void SetIconBGColor(Color pColor)
+    {
+        iconBackground.color = pColor;
     }
 
     //=============================Input handlers==================================
@@ -81,7 +87,7 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
 
         //Update arrow preview
         trajectoryArrow?.UpdateArrow(originWorldPos, launchDir, dragOffset.magnitude / baseCombatEntity.maxPullback);
-        trajectoryArrow?.SetVisible(dragOffset.magnitude > 0.05f);
+        trajectoryArrow?.SetVisible(dragOffset.magnitude > 0.35f);
     }
 
     public void OnPointerUp(PointerEventData eventData)

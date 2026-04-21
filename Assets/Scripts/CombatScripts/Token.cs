@@ -9,6 +9,8 @@ public class Token : MonoBehaviour
              "damage is only dealt to the opposing team.")]
     public int ownerIndex = 0;
 
+    public MovementType movementType;
+
     //Physics
     [Header("Physics")]
     [Tooltip("Collision radius in world units (XZ plane).")]
@@ -32,6 +34,7 @@ public class Token : MonoBehaviour
     //State (written by CollisionSystem)
     [HideInInspector] public Vector2 velocity; //XZ velocity
     [HideInInspector] public bool isLaunched; //true while in active play
+    [HideInInspector] public bool isOriginalLaunched; //true if this was the one that the player originally launched
     
     //When this token is a friendly knock-on, the chain traces back to the
     //original launcher so damage attribution is correct.
@@ -74,6 +77,7 @@ public class Token : MonoBehaviour
     {
         velocity = direction.normalized * speed;
         Debug.Log(velocity);
+        isOriginalLaunched = true;
         isLaunched = true;
         launchInstigator = this; //Initialize instigator to self
     }
@@ -94,6 +98,11 @@ public class Token : MonoBehaviour
         get => new Vector2(transform.position.x, transform.position.z);
         set => transform.position = new Vector3(value.x, transform.position.y, value.y);
     }
+
+    public override string ToString()
+    {
+        return gameObject.name;
+    }
 }
 
 //============================================================================
@@ -106,10 +115,17 @@ public struct CollisionAction
     public enum CollisionKind { Wall, FriendlyToken, EnemyToken }
 
     public CollisionKind kind;
-    /// <summary>The other token involved (null for wall collisions).</summary>
-    public Token         other;
-    /// <summary>Relative speed at moment of impact.</summary>
-    public float         impactSpeed;
-    /// <summary>World-space normal of the collision surface (XZ, length 1).</summary>
-    public Vector2       normal;
+    //The other token involved (null for wall collisions)
+    public Token other;
+    //Relative speed at moment of impact
+    public float impactSpeed;
+    //World-space normal of the collision surface (XZ, length 1)
+    public Vector2 normal;
+}
+
+public enum MovementType
+{
+    Piercer,
+    Bouncer,
+    Pusher
 }

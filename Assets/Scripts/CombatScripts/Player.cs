@@ -6,6 +6,7 @@ public class Player : MonoBehaviour
 {
     [Header("Player Info")]
     public int playerID;
+    public Color playerColor;
 
     public List<BaseCombatEntity> ownedEntities;
     public GameObject testEntityPrefab;
@@ -61,7 +62,7 @@ public class Player : MonoBehaviour
         //Save this entity to the owned list
         ownedEntities.Add(spawnHelper.GetBaseCombatEntity());
 
-        spawnHelper.SetEntityOwner(playerID, this);
+        spawnHelper.SetEntityOwner(this);
         spawnHelper.PositionObjects(pSpawnPosition);
     }
 }
