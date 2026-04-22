@@ -33,7 +33,7 @@ public class Token : MonoBehaviour
 
     //State (written by CollisionSystem)
     [HideInInspector] public Vector2 velocity; //XZ velocity
-    [HideInInspector] public bool isLaunched; //true while in active play
+    [HideInInspector] public bool isMoving; //true while not at rest
     [HideInInspector] public bool isOriginalLaunched; //true if this was the one that the player originally launched
     
     //When this token is a friendly knock-on, the chain traces back to the
@@ -78,7 +78,7 @@ public class Token : MonoBehaviour
         velocity = direction.normalized * speed;
         Debug.Log(velocity);
         isOriginalLaunched = true;
-        isLaunched = true;
+        isMoving = true;
         launchInstigator = this; //Initialize instigator to self
     }
 

@@ -726,10 +726,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CollisionSystem
   arena: {fileID: 711398210}
-  restSpeedThreshold: 0.5
+  originalTokenRestSpeedThreshold: 0.5
+  chainTokenRestSpeedThreshold: 0.2
   subSteps: 1
   depenetrationFactor: 0.5
-  impactElasticityMultiplier: 2
+  knockbackElasticityMultiplier: 0.5
   tokensAreMoving: 0
 --- !u!114 &711398210
 MonoBehaviour:

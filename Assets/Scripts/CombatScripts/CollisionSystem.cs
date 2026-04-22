@@ -13,8 +13,10 @@ public class CollisionSystem : MonoBehaviour
     public ArenaWalls arena;
 
     [Header("Tuning")]
-    [Tooltip("A token is considered 'at rest' when its speed falls below this value")]
-    public float restSpeedThreshold = 0.05f;
+    [Tooltip("An originally launched token is considered 'at rest' when its speed falls below this value")]
+    public float originalTokenRestSpeedThreshold = 0.5f;
+    [Tooltip("A chain-hit moved token is considered 'at rest' when its speed falls below this value")]
+    public float chainTokenRestSpeedThreshold = 0.05f;
 
     [Tooltip("How many sub-steps to run per FixedUpdate for better tunnelling resistance; 1 is fine for most cases; raise to 2-4 for very fast tokens")]
     [Range(1, 8)]
@@ -31,10 +33,15 @@ public class CollisionSystem : MonoBehaviour
 
     [HideInInspector] public bool tokensAreMoving;
 
-    readonly List<Token> allTokensList = new List<Token>();
+    readonly List<Token> allTokens = new List<Token>();
 
     //Pair set prevents double-processing the same pair in one frame
     readonly HashSet<long> resolvedPairs = new HashSet<long>();
+
+    //Tracks piercing overlaps that are *currently ongoing* so damage fires only on
+    //the first frame of contact, not every frame the piercer is passing through.
+    //A pair is added when overlap begins and removed when the tokens separate.
+    readonly HashSet<long> piercingActivePairs = new HashSet<long>();
 
     //============================================================================
 
@@ -53,9 +60,9 @@ public class CollisionSystem : MonoBehaviour
         if(!tokensAreMoving) return;
 
         bool restCheck = true;
-        foreach(Token t in allTokensList)
+        foreach(Token t in allTokens)
         {
-            if(t.isLaunched)
+            if(t.isMoving)
             {
                 restCheck = false;
             }
@@ -74,35 +81,48 @@ public class CollisionSystem : MonoBehaviour
         float dt = Time.fixedDeltaTime / subSteps;
         resolvedPairs.Clear();
 
+        //Remove any piercing pairs whose tokens are no longer overlapping, so the next contact registers as a fresh hit
+        piercingActivePairs.RemoveWhere(key =>
+        {
+            //Decode the pair indices back out of the key
+            int i = (int)(key >> 32);
+            int j = (int)(key & 0xFFFFFFFFL);
+            if (i >= allTokens.Count || j >= allTokens.Count) return true; // stale
+            Token ta = allTokens[i], tb = allTokens[j];
+            float minDist = ta.radius + tb.radius;
+            return (tb.Position2D - ta.Position2D).sqrMagnitude >= minDist * minDist;
+        });
+
         for(int step = 0; step < subSteps; step++)
         {
             // 1. Drag + integrate
-            foreach(Token t in allTokensList)
-                if(t.isLaunched) StepToken(t, dt);
+            foreach(Token t in allTokens)
+                if(t.isMoving) StepToken(t, dt);
 
             // 2. Token–token collisions
-            for(int i = 0; i < allTokensList.Count; i++)
-            for(int j = i + 1; j < allTokensList.Count; j++)
+            for(int i = 0; i < allTokens.Count; i++)
+            for(int j = i + 1; j < allTokens.Count; j++)
             {
                 long pairKey = PairKey(i, j);
                 if(resolvedPairs.Contains(pairKey)) continue;
-                if(ResolveTokenPair(allTokensList[i], allTokensList[j]))
+                if(ResolveTokenPair(allTokens[i], allTokens[j]))
                     resolvedPairs.Add(pairKey);
             }
 
             // 3. Wall collisions
-            foreach (Token t in allTokensList)
+            foreach (Token t in allTokens)
                 ResolveWalls(t);
         }
 
         // 4. Mark resting tokens
-        foreach(Token t in allTokensList)
+        foreach(Token t in allTokens)
         {
-            if (!t.isLaunched) continue;
-            if (t.velocity.sqrMagnitude < restSpeedThreshold * restSpeedThreshold)
+            if (!t.isMoving) continue;
+            //TODO: on rest for a piercer, make sure that there's no issues with overlap
+            if ((t.isOriginalLaunched && t.velocity.sqrMagnitude < originalTokenRestSpeedThreshold * originalTokenRestSpeedThreshold) || (!t.isOriginalLaunched && t.velocity.sqrMagnitude < chainTokenRestSpeedThreshold * chainTokenRestSpeedThreshold))
             {
                 t.velocity = Vector2.zero;
-                t.isLaunched = false;
+                t.isMoving = false;
                 t.isOriginalLaunched = false;
                 t.launchInstigator = null;
                 Debug.Log("Token named [" + t + "] is now resting");
@@ -116,12 +136,12 @@ public class CollisionSystem : MonoBehaviour
     //Token.Launch() calls this automatically; you shouldn't need to call it directly.
     public void Register(Token token)
     {
-        if (!allTokensList.Contains(token))
-            allTokensList.Add(token);
+        if (!allTokens.Contains(token))
+            allTokens.Add(token);
     }
 
     //Immediately remove a token from simulation (e.g. when it's destroyed)
-    public void Unregister(Token token) => allTokensList.Remove(token);
+    public void Unregister(Token token) => allTokens.Remove(token);
 
     //============================================================================
     
@@ -141,13 +161,33 @@ public class CollisionSystem : MonoBehaviour
         Vector2 delta = b.Position2D - a.Position2D;
         float distSq = delta.sqrMagnitude;
         float minDist = a.radius + b.radius;
+        float impactSpeed;
 
         if(distSq >= minDist * minDist) return false; //no overlap
 
-        float dist   = Mathf.Sqrt(distSq);
+        float dist = Mathf.Sqrt(distSq);
         Vector2 norm = dist > 1e-6f ? delta / dist : Vector2.right; //safe normal
 
-        //TODO: Piercing logic here
+        //=====================Piercing pass through==================
+        //If either token is piercing: no depenetration, no impulse exchange
+        //Damage fires only on the first frame of each discrete contact
+        if ((a.isOriginalLaunched && a.movementType == MovementType.Piercer) || (b.isOriginalLaunched && b.movementType == MovementType.Piercer))
+        {
+            long pairKey = PairKey(
+                allTokens.IndexOf(a),
+                allTokens.IndexOf(b));
+
+            if(!piercingActivePairs.Contains(pairKey))
+            {
+                piercingActivePairs.Add(pairKey);
+                float relVelN = Vector2.Dot(a.velocity - b.velocity, norm);
+                impactSpeed = Mathf.Abs(relVelN);
+                FireTokenCollisionEvents(a, b, norm, impactSpeed);
+            }
+            return true; //Mark pair handled for resolvedPairs this frame
+        }
+        
+        //================================================================
 
         //Positional depenetration
         float overlap = minDist - dist;
@@ -204,7 +244,7 @@ public class CollisionSystem : MonoBehaviour
             if(a.movementType != MovementType.Piercer)
             {
                 Debug.Log("applying knockback to [" + b + "]");
-                float kickB = velNA * massRatioA * (1f + restitution);
+                float kickB = velNA * massRatioB * restitution;
                 b.velocity += norm * kickB * knockbackElasticityMultiplier;
             }
         }
@@ -224,17 +264,17 @@ public class CollisionSystem : MonoBehaviour
             if(b.movementType != MovementType.Piercer)
             {
                 Debug.Log("applying knockback to [" + a + "]");
-                float kickA = velNB * massRatioB * (1f + restitution);
-                a.velocity -= norm * kickA * knockbackElasticityMultiplier;
+                float kickA = velNB * massRatioA * restitution;
+                a.velocity += norm * kickA * knockbackElasticityMultiplier;
             }
         }
         else //This is a chained collision
         {
-            //Kick both a and b back
-            float kickA = velNB * massRatioB * (1f + restitution);
-            a.velocity -= norm * kickA * knockbackElasticityMultiplier;
+            //Kick both a and b back, in OPPOSITE DIRECTIONS
+            float kickA = velNB * massRatioA * restitution;
+            a.velocity += norm * kickA * knockbackElasticityMultiplier;
 
-            float kickB = velNA * massRatioA * (1f + restitution);
+            float kickB = velNA * massRatioB * restitution;
             b.velocity += norm * kickB * knockbackElasticityMultiplier;
         }
 
@@ -256,7 +296,7 @@ public class CollisionSystem : MonoBehaviour
         //     b.velocity += norm * (newVelNB - velNB);
         // }
 
-        float impactSpeed = closingSpeed;
+        impactSpeed = closingSpeed;
 
         //===================================================
 
@@ -268,6 +308,10 @@ public class CollisionSystem : MonoBehaviour
 
     void FireTokenCollisionEvents(Token a, Token b, Vector2 norm, float impactSpeed)
     {
+        //Mark both tokens as moving
+        a.isMoving = true;
+        b.isMoving = true;
+
         //Determine instigators (might be null if token is resting/unowned)
         Token instigatorA = a.launchInstigator;
         Token instigatorB = b.launchInstigator;
@@ -292,12 +336,12 @@ public class CollisionSystem : MonoBehaviour
         b.onCollision?.Invoke(actionForB);
 
         //Damage: only deal damage across team boundaries
-        //The instigator (original launcher) is credited for any knock-on damage.
+        //Damage is determined only by the most directly collided token
         if(instigatorA != null && instigatorA.ownerIndex != b.ownerIndex)
-            ApplyDamage(b, a, instigatorA, impactSpeed);
+            ApplyDamage(b, a, a, impactSpeed);
 
         if(instigatorB != null && instigatorB.ownerIndex != a.ownerIndex)
-            ApplyDamage(a, b, instigatorB, impactSpeed);
+            ApplyDamage(a, b, b, impactSpeed);
 
         //Propagate launch instigator for friendly knock-ons:
         //If A was launched and hits friendly B (at rest), B inherits A's instigator.
@@ -328,7 +372,7 @@ public class CollisionSystem : MonoBehaviour
         if(target.launchInstigator != null) return; // already attributed
 
         target.launchInstigator = mover.launchInstigator;
-        target.isLaunched = true;
+        target.isMoving = true;
     }
 
     void ResolveWalls(Token t)
@@ -398,7 +442,7 @@ public class CollisionSystem : MonoBehaviour
     {
         if (!Application.isPlaying) return;
         Gizmos.color = Color.yellow;
-        foreach (Token t in allTokensList)
+        foreach (Token t in allTokens)
         {
             Vector3 center = t.transform.position;
             // Draw radius circle approximation (16 segments on XZ)

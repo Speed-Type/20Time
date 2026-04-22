@@ -103,7 +103,7 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
         Vector3 dragOffset = currentDragWorldPos - originWorldPos;
 
         //Only launch if there was a meaningful drag
-        if(dragOffset.magnitude < 0.05f) return;
+        if(dragOffset.magnitude < baseCombatEntity.maxPullback / 7f) return;
 
         Vector3 launchDirection = -dragOffset.normalized;
         float launchSpeed = (dragOffset.magnitude / baseCombatEntity.maxPullback);
