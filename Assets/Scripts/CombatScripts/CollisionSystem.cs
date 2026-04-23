@@ -118,9 +118,34 @@ public class CollisionSystem : MonoBehaviour
         foreach(Token t in allTokens)
         {
             if (!t.isMoving) continue;
-            //TODO: on rest for a piercer, make sure that there's no issues with overlap
+
             if ((t.isOriginalLaunched && t.velocity.sqrMagnitude < originalTokenRestSpeedThreshold * originalTokenRestSpeedThreshold) || (!t.isOriginalLaunched && t.velocity.sqrMagnitude < chainTokenRestSpeedThreshold * chainTokenRestSpeedThreshold))
             {
+                //Depenetration for piercer
+                if(t.isOriginalLaunched && t.movementType == MovementType.Piercer)
+                {
+                    foreach(Token other in allTokens)
+                    {
+                        if (other == t) continue;
+
+                        Vector2 delta = other.Position2D - t.Position2D;
+                        float distSq = delta.sqrMagnitude;
+                        float minDist = t.radius + other.radius;
+
+                        if (distSq >= minDist * minDist) continue; // no overlap
+
+                        float dist = distSq > 1e-6f ? Mathf.Sqrt(distSq) : 0f;
+                        Vector2 norm = dist > 1e-6f ? delta / dist : Vector2.right;
+                        float overlap = minDist - dist;
+
+                        // Split the separation by mass so a resting piercer
+                        // doesn't violently shove a heavy token out of the way
+                        float totalMass = t.mass + other.mass;
+                        t.Position2D -= norm * (other.mass / totalMass) * overlap;
+                        other.Position2D += norm * (t.mass  / totalMass) * overlap;
+                    }
+                }
+
                 t.velocity = Vector2.zero;
                 t.isMoving = false;
                 t.isOriginalLaunched = false;
@@ -192,26 +217,13 @@ public class CollisionSystem : MonoBehaviour
         //Positional depenetration
         float overlap = minDist - dist;
         float totalMass = a.mass + b.mass;
+
         // massRatioA = how much of B's mass vs total; approaches 1 as B → ∞
         float massRatioA  = b.mass / totalMass;  // blend toward full reflect as target gets heavier
         float massRatioB  = a.mass / totalMass;
 
-        // Instead of splitting the push by mass ratio,
-        // push the launched token back the full overlap amount
-        if (a.isOriginalLaunched)
-        {
-            a.Position2D -= norm * overlap * depenetrationFactor;
-        }
-        else if (b.isOriginalLaunched)
-        {
-            b.Position2D += norm * overlap * depenetrationFactor;  // norm points away from A, so += pushes B away
-        }
-        else
-        {
-            // chained — split as before
-            a.Position2D -= norm * (b.mass / totalMass) * overlap * depenetrationFactor;
-            b.Position2D += norm * (a.mass / totalMass) * overlap * depenetrationFactor;
-        }
+        a.Position2D -= norm * massRatioA * overlap * depenetrationFactor;
+        b.Position2D += norm * massRatioB * overlap * depenetrationFactor;
 
         //=====================Velocity handling==================
 
@@ -254,7 +266,7 @@ public class CollisionSystem : MonoBehaviour
             if(b.movementType == MovementType.Bouncer  && velNB < 0f)
             {
                 Debug.Log("token named [" + b + "] is movement type bouncer");
-                b.velocity -= norm * (-velNB * (restitution + 1f));
+                b.velocity += norm * (-velNB * (restitution + 1f));
             }
             //Otherwise, nothing changes for a's velocity
 
