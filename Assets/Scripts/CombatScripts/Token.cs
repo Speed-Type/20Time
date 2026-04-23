@@ -47,6 +47,10 @@ public class Token : MonoBehaviour
     //Fires on ANY collision (wall or token)
     //CollisionAction carries context you can extend for custom effects.
     public UnityEvent<CollisionAction> onCollision;
+    public UnityEvent<CollisionAction> onAttack; //Called when this token collides with an enemy token
+    public UnityEvent<CollisionAction> onFriendlyBump; //Called when this token is bumped by a friendly token
+    public UnityEvent<CollisionAction> onUnfriendlyBump; //Called when this token is bumped by an enemy token
+    public UnityEvent onTurnEnd; //Called when a turn ends
 
     //============================================================================
 

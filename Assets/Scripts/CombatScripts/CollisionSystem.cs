@@ -75,6 +75,9 @@ public class CollisionSystem : MonoBehaviour
             //End the current player's turn
             CombatManager.instance.GetCurrentPlayer().EndTurn();
 
+            //Reset all token effects
+            ResetTokenEffects();
+
             return;
         }
 
@@ -150,8 +153,18 @@ public class CollisionSystem : MonoBehaviour
                 t.isMoving = false;
                 t.isOriginalLaunched = false;
                 t.launchInstigator = null;
-                Debug.Log("Token named [" + t + "] is now resting");
+                //Debug.Log("Token named [" + t + "] is now resting");
             }
+        }
+    }
+
+    //============================================================================
+
+    private void ResetTokenEffects()
+    {
+        foreach(Token t in allTokens)
+        {
+            t.onTurnEnd?.Invoke();
         }
     }
 
@@ -234,18 +247,18 @@ public class CollisionSystem : MonoBehaviour
         float closingSpeed = velNA - velNB;
         if (closingSpeed <= 0f) return false;
 
-        Debug.Log("Token named [" + a.gameObject.name + "] collided with token named [" + b.gameObject.name + "]");
+        //Debug.Log("Token named [" + a.gameObject.name + "] collided with token named [" + b.gameObject.name + "]");
 
         float restitution = Mathf.Min(a.tokenRestitution, b.tokenRestitution);
 
         if(a.isOriginalLaunched)
         {
-            Debug.Log("token named [" + a + "] is the original");
+            //Debug.Log("token named [" + a + "] is the original");
 
             //If a is a bouncer token, then do full bounce
             if(a.movementType == MovementType.Bouncer && velNA > 0f)
             {
-                Debug.Log("token named [" + a + "] is movement type bouncer");
+                //Debug.Log("token named [" + a + "] is movement type bouncer");
                 a.velocity += norm * (-velNA * (restitution + 1f));
             }
             //Otherwise, nothing changes for a's velocity
@@ -253,7 +266,7 @@ public class CollisionSystem : MonoBehaviour
             //Unless a is a piercer, knock b back
             if(a.movementType != MovementType.Piercer)
             {
-                Debug.Log("applying knockback to [" + b + "]");
+                //Debug.Log("applying knockback to [" + b + "]");
                 float kickB = Mathf.Abs(velNA) * massRatioB * restitution;
                 b.velocity += norm * kickB * knockbackElasticityMultiplier;
             }
@@ -262,10 +275,10 @@ public class CollisionSystem : MonoBehaviour
         {
             Debug.Log("token named [" + b + "] is the original");
 
-            //If b is a bouncer token, then do full bounce
+            ////If b is a bouncer token, then do full bounce
             if(b.movementType == MovementType.Bouncer  && velNB < 0f)
             {
-                Debug.Log("token named [" + b + "] is movement type bouncer");
+                //Debug.Log("token named [" + b + "] is movement type bouncer");
                 b.velocity += norm * (-velNB * (restitution + 1f));
             }
             //Otherwise, nothing changes for a's velocity
@@ -273,7 +286,7 @@ public class CollisionSystem : MonoBehaviour
             //Unless b is a piercer, knock a back
             if(b.movementType != MovementType.Piercer)
             {
-                Debug.Log("applying knockback to [" + a + "]");
+                //Debug.Log("applying knockback to [" + a + "]");
                 float kickA = Mathf.Abs(velNB) * massRatioA * restitution;
                 a.velocity -= norm * kickA * knockbackElasticityMultiplier;
             }
@@ -324,9 +337,6 @@ public class CollisionSystem : MonoBehaviour
             normal = norm
         };
 
-        a.onCollision?.Invoke(actionForA);
-        b.onCollision?.Invoke(actionForB);
-
         //Damage: only deal damage across team boundaries
         //Damage is determined only by the most directly collided token
         if(instigatorA != null && instigatorA.ownerIndex != b.ownerIndex)
@@ -339,6 +349,38 @@ public class CollisionSystem : MonoBehaviour
         //If A was launched and hits friendly B (at rest), B inherits A's instigator.
         PropagateInstigator(a, b);
         PropagateInstigator(b, a);
+
+        //Invoke correct collision events
+        if(a.isOriginalLaunched)
+        {
+            if(a.ownerIndex == b.ownerIndex)
+            {
+                //friendly collision
+                b.onFriendlyBump?.Invoke(actionForB);
+            }
+            else
+            {
+                //unfriendly collision
+                a.onAttack?.Invoke(actionForA);
+                b.onUnfriendlyBump?.Invoke(actionForB);
+            }
+        }
+        if(b.isOriginalLaunched)
+        {
+            if(a.ownerIndex == b.ownerIndex)
+            {
+                //friendly collision
+                a.onFriendlyBump?.Invoke(actionForA);
+            }
+            else
+            {
+                //unfriendly collision
+                b.onAttack?.Invoke(actionForB);
+                a.onUnfriendlyBump?.Invoke(actionForA);
+            }
+        }
+        a.onCollision?.Invoke(actionForA);
+        b.onCollision?.Invoke(actionForB);
     }
 
     static CollisionAction.CollisionKind GetCollisionKind(Token self, Token other)

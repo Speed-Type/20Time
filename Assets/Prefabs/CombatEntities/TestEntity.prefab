@@ -522,6 +522,7 @@ GameObject:
   - component: {fileID: 3923948849726083744}
   - component: {fileID: 1309064636396312341}
   - component: {fileID: 8349533533850923147}
+  - component: {fileID: 6890487584230944098}
   m_Layer: 0
   m_Name: TestEntity
   m_TagString: Untagged
@@ -669,9 +670,35 @@ MonoBehaviour:
   wallRestitution: 0.95
   tokenRestitution: 1
   velocity: {x: 0, y: 0}
-  isLaunched: 0
+  isMoving: 0
   isOriginalLaunched: 0
   launchInstigator: {fileID: 0}
   onCollision:
     m_PersistentCalls:
       m_Calls: []
+  onAttack:
+    m_PersistentCalls:
+      m_Calls: []
+  onFriendlyBump:
+    m_PersistentCalls:
+      m_Calls: []
+  onUnfriendlyBump:
+    m_PersistentCalls:
+      m_Calls: []
+  onTurnEnd:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &6890487584230944098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7794261320816973793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1fa2a9647f1545ebad2366de55714e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BumpBoost
+  maxCharges: 5
+  speedIncrease: 1
