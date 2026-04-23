@@ -196,24 +196,22 @@ public class CollisionSystem : MonoBehaviour
         float massRatioA  = b.mass / totalMass;  // blend toward full reflect as target gets heavier
         float massRatioB  = a.mass / totalMass;
 
-        //OPTION 1:
-
-        float pushA = (b.mass / totalMass) * overlap * depenetrationFactor;
-        float pushB = (a.mass / totalMass) * overlap * depenetrationFactor;
-
-        a.Position2D -= norm * pushA;
-        b.Position2D += norm * pushB;
-
-        //OPTION 2:
-
-        // float pushA = (a.isOriginalLaunched && a.movementType == MovementType.Pusher) ? 0f : (b.mass / totalMass) * overlap * depenetrationFactor;
-        // float pushB = (b.isOriginalLaunched && b.movementType == MovementType.Pusher) ? 0f : (a.mass / totalMass) * overlap * depenetrationFactor;
-
-        // //If both are immovable just separate them evenly (shouldn't normally happen).
-        // if (a.isOriginalLaunched && a.movementType == MovementType.Pusher && b.isOriginalLaunched && b.movementType == MovementType.Pusher) { pushA = pushB = overlap * 0.5f * depenetrationFactor; }
-
-        // a.Position2D -= norm * pushA;
-        // b.Position2D += norm * pushB;
+        // Instead of splitting the push by mass ratio,
+        // push the launched token back the full overlap amount
+        if (a.isOriginalLaunched)
+        {
+            a.Position2D -= norm * overlap * depenetrationFactor;
+        }
+        else if (b.isOriginalLaunched)
+        {
+            b.Position2D += norm * overlap * depenetrationFactor;  // norm points away from A, so += pushes B away
+        }
+        else
+        {
+            // chained — split as before
+            a.Position2D -= norm * (b.mass / totalMass) * overlap * depenetrationFactor;
+            b.Position2D += norm * (a.mass / totalMass) * overlap * depenetrationFactor;
+        }
 
         //=====================Velocity handling==================
 
@@ -233,7 +231,7 @@ public class CollisionSystem : MonoBehaviour
             Debug.Log("token named [" + a + "] is the original");
 
             //If a is a bouncer token, then do full bounce
-            if(a.movementType == MovementType.Bouncer)
+            if(a.movementType == MovementType.Bouncer && velNA > 0f)
             {
                 Debug.Log("token named [" + a + "] is movement type bouncer");
                 a.velocity += norm * (-velNA * (restitution + 1f));
@@ -244,7 +242,7 @@ public class CollisionSystem : MonoBehaviour
             if(a.movementType != MovementType.Piercer)
             {
                 Debug.Log("applying knockback to [" + b + "]");
-                float kickB = velNA * massRatioB * restitution;
+                float kickB = Mathf.Abs(velNA) * massRatioB * restitution;
                 b.velocity += norm * kickB * knockbackElasticityMultiplier;
             }
         }
@@ -253,10 +251,10 @@ public class CollisionSystem : MonoBehaviour
             Debug.Log("token named [" + b + "] is the original");
 
             //If b is a bouncer token, then do full bounce
-            if(b.movementType == MovementType.Bouncer)
+            if(b.movementType == MovementType.Bouncer  && velNB < 0f)
             {
                 Debug.Log("token named [" + b + "] is movement type bouncer");
-                b.velocity += norm * (-velNB * (restitution + 1f));
+                b.velocity -= norm * (-velNB * (restitution + 1f));
             }
             //Otherwise, nothing changes for a's velocity
 
@@ -264,37 +262,19 @@ public class CollisionSystem : MonoBehaviour
             if(b.movementType != MovementType.Piercer)
             {
                 Debug.Log("applying knockback to [" + a + "]");
-                float kickA = velNB * massRatioA * restitution;
-                a.velocity += norm * kickA * knockbackElasticityMultiplier;
+                float kickA = Mathf.Abs(velNB) * massRatioA * restitution;
+                a.velocity -= norm * kickA * knockbackElasticityMultiplier;
             }
         }
         else //This is a chained collision
         {
             //Kick both a and b back, in OPPOSITE DIRECTIONS
-            float kickA = velNB * massRatioA * restitution;
-            a.velocity += norm * kickA * knockbackElasticityMultiplier;
+            float kickA = Mathf.Abs(velNB) * massRatioA * restitution;
+            a.velocity -= norm * kickA * knockbackElasticityMultiplier;
 
-            float kickB = velNA * massRatioB * restitution;
+            float kickB = Mathf.Abs(velNA) * massRatioB * restitution;
             b.velocity += norm * kickB * knockbackElasticityMultiplier;
         }
-
-        // if (!a.isOriginalLaunched || a.movementType == MovementType.Bouncer)
-        // {
-        //     // Reflect A's normal component, scaled by how heavy B is relative to total.
-        //     // At equal mass: 0.5 blend → partial reflect + partial pass-through.
-        //     // As B → ∞ mass (or isImmovable): full reflect (wall bounce).
-        //     float newVelNA = Mathf.Lerp(velNA, -velNA * restitution, 1);
-        //     a.velocity += norm * (newVelNA - velNA);
-
-        //     float kickA = velNB * massRatioB * (1f + restitution);
-        //     a.velocity -= norm * kickA;
-        // }
-
-        // if (!b.isOriginalLaunched || b.movementType == MovementType.Bouncer)
-        // {
-        //     float newVelNB = Mathf.Lerp(velNB, -velNB * restitution, 1);
-        //     b.velocity += norm * (newVelNB - velNB);
-        // }
 
         impactSpeed = closingSpeed;
 
