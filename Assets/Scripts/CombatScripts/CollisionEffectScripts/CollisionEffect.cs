@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class CollisionEffect : MonoBehaviour
 {
+    protected Token token;
+    
     protected virtual void Start()
     {
         Token token = GetComponent<Token>();

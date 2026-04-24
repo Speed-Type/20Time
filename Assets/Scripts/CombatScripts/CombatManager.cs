@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,6 +9,9 @@ public class CombatManager : MonoBehaviour
     [Header("Player Management")]
     public List<Player> playerList;
     public int currentPlayerIndex;
+
+    [Header("Camera Controller")]
+    public CombatCameraController camController;
 
     [Header("Component References")]
     public Canvas combatCanvas;
@@ -49,9 +53,10 @@ public class CombatManager : MonoBehaviour
     }
 
     //Called upon valid token launch
-    public void SwitchCamToFollow()
+    public void SwitchCamToFollow(Token launchedToken, Action onCompleteAction = null)
     {
         combatCanvasGroup.alpha = 0;
+        camController.EnterFollowMode(launchedToken, onCompleteAction);
     }
 
     public void EndPlayerTurn()
@@ -64,10 +69,12 @@ public class CombatManager : MonoBehaviour
 
     public void SwitchCamToTopDown()
     {
-        //TODO: add the cam transition to top-down
-
-        //Do next turn
-        StartPlayerTurn();
+        //Cam transition to top-down
+        camController.ExitFollowMode(() => //After the transition is done:
+        {
+            //Do next turn
+            StartPlayerTurn();
+        });
     }
 
     //============================Getters/Setters=================================

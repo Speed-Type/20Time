@@ -88,10 +88,12 @@ public class BaseCombatEntity : MonoBehaviour
         Debug.Log(launchDirection);
         Debug.Log(launchSpeed);
 
-        CombatManager.instance.SwitchCamToFollow();
-
-        CollisionSystem.instance.tokensAreMoving = true;
-        token.Launch(new Vector2(launchDirection.x, launchDirection.z), launchSpeed * speedMultiplier);
+        CombatManager.instance.SwitchCamToFollow(token, () =>
+        {
+            //Wait a bit, then call token launch
+            CollisionSystem.instance.tokensAreMoving = true;
+            token.Launch(new Vector2(launchDirection.x, launchDirection.z), launchSpeed * speedMultiplier);
+        });
     }
 
     public void TakeDamage(float amount, Token source)
