@@ -8,7 +8,8 @@ public class BaseCombatEntity : MonoBehaviour
     public BaseIconInteractable iconController;
     public GladiatorAnimManager animController;
     public Player parentPlayer;
-    [SerializeField] private Image topdownHealthbar;
+    [SerializeField] private Image healthbar;
+    [SerializeField] private GameObject baseplate;
 
     [Header("Entity Info")]
     public String entityName;
@@ -62,7 +63,7 @@ public class BaseCombatEntity : MonoBehaviour
         //Now that at this point the parentPlayer has been set, update accordingly
         token.ownerIndex = parentPlayer.playerID;
         gameObject.name = parentPlayer.playerID + "'s " + entityName;
-        iconController.SetIconBGColor(parentPlayer.playerColor);
+        baseplate.GetComponent<Renderer>().material.color = parentPlayer.playerColor;
 
         //Update healthbars
         UpdateHealthbars();
@@ -121,13 +122,24 @@ public class BaseCombatEntity : MonoBehaviour
     private void UpdateHealthbars()
     {
         float fillPercent = Mathf.Clamp01(currentHealth / maxHealth);
-        topdownHealthbar.fillAmount = fillPercent;
+        healthbar.fillAmount = fillPercent;
     }
 
     //Method that is called once health hits 0
     private void Die()
     {
+        //First, remove the body model from this parent object
+        token.gladiatorModel.transform.SetParent(CombatManager.instance.combatEnvironmentTransform);
+
+        //Play the animation
         animController.PlayAnim(AnimClips.Die);
-        Debug.Log("dead");
+
+        //Remove this token
+        CollisionSystem.instance.Unregister(token); //This is already handled in Token, but just in case
+        parentPlayer.ownedEntities.Remove(this);
+
+        //Destroy objects
+        Destroy(iconController.gameObject);
+        Destroy(this.gameObject);
     }
 }

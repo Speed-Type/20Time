@@ -7,7 +7,6 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
 {
     [Tooltip("Child TrajectoryArrow component for preview drawing")]
     [SerializeField] private TrajectoryArrow trajectoryArrow;
-    [SerializeField] private Image iconBackground;
 
     //============================================================================
 
@@ -45,11 +44,6 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
     public void SetOnReleaseAction(Action<Vector3, float> pOnReleaseAction)
     {
         onReleaseAction = pOnReleaseAction;
-    }
-
-    public void SetIconBGColor(Color pColor)
-    {
-        iconBackground.color = pColor;
     }
 
     //=============================Input handlers==================================

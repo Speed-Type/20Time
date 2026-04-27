@@ -65,4 +65,11 @@ public class Player : MonoBehaviour
         spawnHelper.SetEntityOwner(this);
         spawnHelper.PositionObjects(pSpawnPosition);
     }
+
+    //============================================================================
+
+    public bool hasEntities()
+    {
+        return ownedEntities.Count > 0;
+    }
 }

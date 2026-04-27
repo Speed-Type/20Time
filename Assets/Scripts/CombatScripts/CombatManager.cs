@@ -65,6 +65,9 @@ public class CombatManager : MonoBehaviour
 
         //Switch cam back to top-down
         SwitchCamToTopDown();
+
+        //End game
+        CheckGameEnd();
     }
 
     public void SwitchCamToTopDown()
@@ -75,6 +78,29 @@ public class CombatManager : MonoBehaviour
             //Do next turn
             StartPlayerTurn();
         });
+    }
+
+    public void CheckGameEnd()
+    {
+        List<Player> playersStillIn = new List<Player>();
+
+        foreach(Player player in playerList)
+        {
+            if(player.hasEntities())
+            {
+                playersStillIn.Add(player);
+            }
+        }
+
+        if(playersStillIn.Count == 1)
+        {
+            //A player won
+        }
+        else if(playersStillIn.Count == 0)
+        {
+            //A tie
+        }
+        //Otherwise, game continues
     }
 
     //============================Getters/Setters=================================

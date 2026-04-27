@@ -3,6 +3,10 @@ using UnityEngine.Events;
 
 public class Token : MonoBehaviour
 {
+    //References
+    [Header("References")]
+    public GameObject gladiatorModel;
+
     //Identity
     [Header("Identity")]
     [Tooltip("0 = Player 1, 1 = Player 2. Friendly-fire knockback still applies; " +
@@ -58,7 +62,7 @@ public class Token : MonoBehaviour
 
     //============================================================================
     
-    void Awake()
+    private void Awake()
     {
         //Initialize references
         baseCombatEntity = GetComponent<BaseCombatEntity>();
@@ -66,8 +70,13 @@ public class Token : MonoBehaviour
         //Immediately register
         CollisionSystem.instance.Register(this);
     }
+    
+    private void Start()
+    {
+        onCollision.AddListener(SetModelDirection);
+    }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
         //Clean up from the collision system if the GameObject is removed mid-round.
         CollisionSystem.instance.Unregister(this);
@@ -84,6 +93,8 @@ public class Token : MonoBehaviour
         isOriginalLaunched = true;
         isMoving = true;
         launchInstigator = this; //Initialize instigator to self
+
+        SetModelDirection();
     }
 
     //Called by TokenCollisionSystem when an enemy hit lands
@@ -106,6 +117,26 @@ public class Token : MonoBehaviour
     public override string ToString()
     {
         return gameObject.name;
+    }
+
+    //============================================================================
+
+    public void SetModelDirection(CollisionAction collisionAction = new CollisionAction())
+    {
+        if(isOriginalLaunched)
+        {
+            //Face the direction of velocity
+            gladiatorModel.transform.forward = new Vector3(velocity.x, 0, velocity.y);
+            //gladiatorModel.transform.rotation = Quaternion.Euler(0, Vector3.Angle(Vector3.right, velocity), 0);
+            Debug.Log("original collision");
+        }
+        else
+        {
+            //Face the thing that bumped you
+            gladiatorModel.transform.forward = new Vector3(-collisionAction.normal.x, 0, -collisionAction.normal.y);
+            //gladiatorModel.transform.rotation = Quaternion.LookRotation(collisionAction.normal);
+            Debug.Log("other collision");
+        }
     }
 }
 
