@@ -411,59 +411,39 @@ public class CollisionSystem : MonoBehaviour
 
     void ResolveWalls(Token t)
     {
-        if(arena == null) return;
+        if (arena == null) return;
 
-        Vector2 pos = t.Position2D;
-        bool hit = false;
-        Vector2 hitNormal = Vector2.zero;
+        Vector2 center    = arena.center;
+        Vector2 pos       = t.Position2D;
+        float   maxDist   = arena.radius - t.radius;   // how far the token center can stray
 
-        // Left wall
-        if (pos.x - t.radius < arena.left)
-        {
-            pos.x       = arena.left + t.radius;
-            t.velocity.x = Mathf.Abs(t.velocity.x) * t.wallRestitution;
-            hitNormal   = Vector2.right;
-            hit         = true;
-        }
-        // Right wall
-        else if (pos.x + t.radius > arena.right)
-        {
-            pos.x       = arena.right - t.radius;
-            t.velocity.x = -Mathf.Abs(t.velocity.x) * t.wallRestitution;
-            hitNormal   = Vector2.left;
-            hit         = true;
-        }
+        Vector2 fromCenter = pos - center;
+        float   dist       = fromCenter.magnitude;
 
-        // Bottom wall (min Y)
-        if (pos.y - t.radius < arena.bottom)
+        if (dist <= maxDist) return;   // inside boundary, nothing to do
+
+        // Normal points inward (from wall toward center)
+        Vector2 wallNormal = dist > 1e-6f ? -fromCenter / dist : Vector2.up;
+
+        // Depenentrate — push token back inside
+        t.Position2D = center + fromCenter.normalized * maxDist;
+
+        // Reflect velocity off the circular wall
+        // Only flip if the token is moving outward (dot with outward normal > 0)
+        float velOutward = Vector2.Dot(t.velocity, -wallNormal);
+        if (velOutward > 0f)
         {
-            pos.y       = arena.bottom + t.radius;
-            t.velocity.y = Mathf.Abs(t.velocity.y) * t.wallRestitution;
-            hitNormal   = Vector2.up;
-            hit         = true;
-        }
-        // Top wall (max Y)
-        else if (pos.y + t.radius > arena.top)
-        {
-            pos.y       = arena.top - t.radius;
-            t.velocity.y = -Mathf.Abs(t.velocity.y) * t.wallRestitution;
-            hitNormal   = Vector2.down;
-            hit         = true;
+            t.velocity -= 2f * velOutward * (-wallNormal);  // reflect
+            t.velocity *= t.wallRestitution;                 // apply energy loss
         }
 
-        t.Position2D = pos;
-
-        if (hit)
+        t.onCollision?.Invoke(new CollisionAction
         {
-            float wallImpactSpeed = t.velocity.magnitude;   // post-restitution speed
-            t.onCollision?.Invoke(new CollisionAction
-            {
-                kind        = CollisionAction.CollisionKind.Wall,
-                other       = null,
-                impactSpeed = wallImpactSpeed,
-                normal      = hitNormal
-            });
-        }
+            kind        = CollisionAction.CollisionKind.Wall,
+            other       = null,
+            impactSpeed = t.velocity.magnitude,
+            normal      = wallNormal
+        });
     }
 
     //Stable unique key for an unordered pair of list indices
