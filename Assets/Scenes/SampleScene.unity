@@ -403,49 +403,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CombatCameraController
   topDownAnchor: {fileID: 1395519145}
-  sideOffset: 6
-  heightOffset: 1.8
-  behindOffset: 2.5
-  lookTargetHeightBias: 0.4
-  baseFOV: 55
-  maxSpeedFOV: 70
-  fovMaxSpeed: 20
-  fovSmoothTime: 0.25
-  transitionInDuration: 0.6
-  transitionOutDuration: 0.9
-  transitionCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  lingerDuration: 1.6
-  slowMoScale: 0.2
-  slowMoDuration: 0.18
+  minImpactSpeed: 0.55
+  maxImpactSpeed: 12
+  cinematicDistance: 7
+  cinematicHeight: 2.5
+  cinematicLookHeight: 0.5
+  cinematicFOV: 50
+  cinematicSnapSpeed: 10
+  cinematicReturnSpeed: 1
+  cinematicHoldDuration: 0.5
+  cinematicIntensityThreshold: 0.7
+  normalFOV: 60
+  zoomedFOV: 38
+  zoomInSpeed: 18
+  zoomOutSpeed: 4
+  zoomHoldDuration: 0.3
+  zoomPositionBlend: 0.45
+  positionLerpSpeed: 6
+  slowMoScale: 0.1
+  slowMoDuration: 0.5
   slowMoRecoverTime: 0.35
-  slowMoMinImpact: 3
-  punchPullback: 1.5
-  punchLerpSpeed: 12
-  positionSmoothTime: 0.08
-  rotationSmoothSpeed: 8
+  useOrthographic: 0
+  normalOrthoSize: 8
+  zoomedOrthoSize: 5
 --- !u!1 &346212440
 GameObject:
   m_ObjectHideFlags: 0

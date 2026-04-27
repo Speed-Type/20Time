@@ -13,125 +13,127 @@ public class CombatCameraController : MonoBehaviour
              "Should match where your existing top-down camera parks itself.")]
     public Transform topDownAnchor;
 
-    //Following
-    [Header("Follow — Side-on Geometry")]
-    [Tooltip("How far to the side of the token the camera sits.")]
-    public float sideOffset = 6f;
+    //Impact threshold
+    [Header("Impact Threshold")]
+    [Tooltip("Minimum impact speed to trigger any camera effect.")]
+    public float minImpactSpeed = 2.5f;
+    [Tooltip("Impact speed considered maximum for scaling effect intensity.")]
+    public float maxImpactSpeed = 12f;
+ 
+    //Cinematic cut
+    [Header("Cinematic Side-On Cut")]
+    [Tooltip("How far from the impact point the side-on camera sits.")]
+    public float cinematicDistance = 7f;
+    [Tooltip("Height of the side-on camera above the arena floor.")]
+    public float cinematicHeight = 2.5f;
+    [Tooltip("The side-on camera looks at this height on the impact point.")]
+    public float cinematicLookHeight = 0.5f;
+    [Tooltip("FOV used during the cinematic cut.")]
+    public float cinematicFOV = 50f;
+    [Tooltip("How fast the camera snaps to the cinematic position (unscaled).")]
+    public float cinematicSnapSpeed = 22f;
+    [Tooltip("How fast the camera returns to top-down after the cut (unscaled).")]
+    public float cinematicReturnSpeed = 10f;
+    [Tooltip("How long to hold the cinematic view before returning (real seconds). " +
+             "Should be >= slowMoDuration so the cut covers the full slow-mo window.")]
+    public float cinematicHoldDuration = 0.22f;
+    [Tooltip("Intensity threshold (0-1) above which the cinematic cut fires. " +
+             "Below this, only the top-down zoom plays.")]
+    [Range(0f, 1f)]
+    public float cinematicIntensityThreshold = 0.3f;
 
-    [Tooltip("How high above the token the camera sits.")]
-    public float heightOffset = 1.8f;
+    //Zoom
+    [Header("Top-Down Zoom (minor hits)")]
+    public float normalFOV        = 60f;
+    public float zoomedFOV        = 45f;
+    public float zoomInSpeed      = 14f;
+    public float zoomOutSpeed     = 4f;
+    public float zoomHoldDuration = 0.3f;
+ 
+    [Tooltip("How far the top-down camera shifts toward the impact point (0-1).")]
+    [Range(0f, 1f)]
+    public float zoomPositionBlend = 0.35f;
+    public float positionLerpSpeed = 7f;
 
-    [Tooltip("How far behind the token (along its travel direction) the camera sits.")]
-    public float behindOffset = 2.5f;
-
-    [Tooltip("The camera looks at this point relative to the token — raise it slightly " +
-             "so the token sits in the lower third of the frame.")]
-    public float lookTargetHeightBias = 0.4f;
-
-    //FOV Control
-    [Header("Follow — FOV")]
-    public float baseFOV = 55f;
-    public float maxSpeedFOV = 70f;
-    [Tooltip("Token speed at which FOV reaches maxSpeedFOV.")]
-    public float fovMaxSpeed = 20f;
-    public float fovSmoothTime = 0.25f;
-
-    //Transitions
-    [Header("Transition")]
-    [Tooltip("How long the blend from top-down → follow takes.")]
-    public float transitionInDuration  = 0.6f;
-    [Tooltip("How long the blend from follow → top-down takes.")]
-    public float transitionOutDuration = 0.9f;
-    public AnimationCurve transitionCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-
-    //Pause State
-    [Header("Linger")]
-    [Tooltip("How long the camera holds on the resting token before returning.")]
-    public float lingerDuration = 1.6f;
-
-    //Slow Mo Controls
+    //Slow mo
     [Header("Slow Motion")]
-    [Tooltip("Time scale during a collision slow-mo hit.")]
     [Range(0.05f, 1f)]
-    public float slowMoScale       = 0.2f;
-    [Tooltip("How long the slow-mo dip lasts (real seconds).")]
-    public float slowMoDuration    = 0.18f;
-    [Tooltip("How long to ease back to normal time after the dip (real seconds)")]
-    public float slowMoRecoverTime = 0.35f;
-    [Tooltip("Minimum impact speed (from CollisionAction.impactSpeed) to trigger slow-mo")]
-    public float slowMoMinImpact   = 3f;
+    public float slowMoScale      = 0.25f;
+    public float slowMoDuration   = 0.14f;  // real seconds at slow speed
+    public float slowMoRecoverTime = 0.4f;  // real seconds to ease back to 1x
 
-    //Collision Zoom
-    [Header("Collision Zoom Punch")]
-    [Tooltip("How far the camera pulls back on impact.")]
-    public float punchPullback   = 1.5f;
-    [Tooltip("How quickly the punch lerps in and out.")]
-    public float punchLerpSpeed  = 12f;
-
-    //Smoothing
-    [Header("Smoothing")]
-    public float positionSmoothTime  = 0.08f;
-    public float rotationSmoothSpeed = 8f;
+    //Ortho support
+    [Header("Orthographic (optional)")]
+    [Tooltip("If your top-down camera is orthographic, enable this and set the " +
+             "sizes instead of FOV values above.")]
+    public bool useOrthographic = false;
+    public float normalOrthoSize = 8f;
+    public float zoomedOrthoSize = 5f;
 
     //============================================================================
 
-    private enum CamState { TopDown, TransitionIn, Following, Lingering, TransitionOut }
-
     private Camera cam;
-    private CamState state = CamState.TopDown;
-    private Token followTarget;
+ 
+    // Top-down zoom
+    private float   zoomT;
+    private Vector3 currentPos;
+    private bool    hasImpact;
+    private Vector3 impactWorldPos;
+    private Vector3 impactNormal;
+ 
+    // Multi-collision frame guard
+    private bool    collisionThisFrame;
+    private float   frameMaxIntensity;
+    private Vector3 frameImpactPos;
+    private Vector3 frameImpactNormal;
+ 
+    // Cinematic
+    private bool       inCinematic;
+    Vector3    committedPerp;      // locked side direction for the current sequence
+    bool       hasCommittedPerp;   // false until the first cut of a sequence picks a side
+    private Vector3    cinematicTargetPos;
+    private Quaternion cinematicTargetRot;
+    private float      cinematicTargetFOV;
+ 
+    // Slow mo
+    private bool  inSlowMo;
+    private float targetTimeScale = 1f;
+ 
+    // Coroutines
+    private Coroutine zoomRoutine;
+    private Coroutine slowMoRoutine;
+    private Coroutine cinematicRoutine;
 
-    //Smooth follow
-    private Vector3 posVelocity;
-    private float fovVelocity;
-    private float currentFOV;
-
-    //Transition
-    private float transitionT; //0 to 1
-    private Vector3 transitionFromPos;
-    private Quaternion transitionFromRot;
-    private float transitionFromFOV;
-
-    //Linger
-    private float lingerTimer;
-
-    //Slow mo
-    private bool inSlowMo;
-    private float slowMoTimer;
-    private float followTargetTimeScale = 1f;
-
-    //Collision punch
-    private float punchOffset; //Extra behind-offset applied during punch
-    private float punchTarget;
-
-    //Desired follow transform (computed each frame in Following state)
-    private Vector3 desiredPos;
-    private Quaternion desiredRot;
-    private float desiredFOV;
+    private Token targetToken;
 
     //============================================================================
     void Awake()
     {
         cam = GetComponent<Camera>();
-        currentFOV = cam.fieldOfView;
-    }
-
-    void OnEnable() //?????????????????
-    {
-        //Hook into Token collision events when we start following (done in EnterFollowMode)
+        currentPos = topDownAnchor != null ? topDownAnchor.position : transform.position;
+        
+        if (useOrthographic) cam.orthographic = true;
+        ApplyTopDownZoom(0f);
     }
 
     void Update()
     {
-        UpdateSlowMo();
 
-        switch(state)
+        //Resolve all collisions that fired this FixedUpdate into one camera event
+        if (collisionThisFrame)
         {
-            case CamState.TopDown:       break;
-            case CamState.TransitionIn:  UpdateTransitionIn();  break;
-            case CamState.Following:     UpdateFollowing();      break;
-            case CamState.Lingering:     UpdateLingering();      break;
-            case CamState.TransitionOut: UpdateTransitionOut();  break;
+            ProcessImpact(frameMaxIntensity, frameImpactPos, frameImpactNormal);
+            collisionThisFrame = false;
+            frameMaxIntensity  = 0f;
+        }
+ 
+        UpdateSlowMo();
+ 
+        //Top-down zoom and position only when not in a cinematic cut
+        if (!inCinematic)
+        {
+            ApplyTopDownZoom(zoomT);
+            UpdateTopDownPosition();
         }
     }
 
@@ -143,231 +145,297 @@ public class CombatCameraController : MonoBehaviour
     {
         if(token == null) return;
 
-        //Unsubscribe from any previous target
-        if(followTarget != null)
-            followTarget.onCollision.RemoveListener(OnTargetCollision);
+        targetToken = token;
 
-        followTarget = token;
-        followTarget.onCollision.AddListener(OnTargetCollision);
+        //Remove first to avoid double-subscription if called twice
+        targetToken.onAttack.RemoveListener(OnCollision);
+        targetToken.onAttack.AddListener(OnCollision);
 
-        //Snapshot current camera state as the "from" for the transition
-        transitionFromPos = transform.position;
-        transitionFromRot = transform.rotation;
-        transitionFromFOV = cam.fieldOfView;
-        transitionT = 0f;
-
-        punchOffset = 0f;
-        punchTarget = 0f;
-
-        state = CamState.TransitionIn;
-
-        if(onCompleteAction != null) afterTransitionToFollow = onCompleteAction;
+        //TEMP
+        onCompleteAction();
     }
 
     //Manually force an exit from follow mode (e.g. turn ends early)
     //Normally called automatically when the token comes to rest
     public void ExitFollowMode(Action onCompleteAction = null)
     {
-        if(state == CamState.TopDown) return;
-        BeginTransitionOut();
-
-        if(onCompleteAction != null) afterTransitionToTopdown = onCompleteAction;
+        targetToken.onAttack.RemoveListener(OnCollision);
+        
+        //TEMP
+        onCompleteAction();
     }
 
-    //============================State Updates================================================
-    private Action afterTransitionToFollow;
-    void UpdateTransitionIn()
+    //============================Collisions================================================
+    
+    void OnCollision(CollisionAction action)
     {
-        transitionT += Time.deltaTime / transitionInDuration;
-        transitionT = Mathf.Clamp01(transitionT);
-
-        float t = transitionCurve.Evaluate(transitionT);
-
-        //Compute where the follow camera wants to be right now
-        ComputeDesiredFollowTransform();
-
-        transform.position = Vector3.Lerp(transitionFromPos, desiredPos, t);
-        transform.rotation = Quaternion.Slerp(transitionFromRot, desiredRot, t);
-        cam.fieldOfView = Mathf.Lerp(transitionFromFOV, desiredFOV, t);
-
-        if(transitionT >= 1f)
+        //Don't do any impact effects if we're below the speed threshold or this is a wall hit
+        if (action.impactSpeed < minImpactSpeed || action.other == null) return;
+ 
+        float intensity = Mathf.Clamp01(
+            (action.impactSpeed - minImpactSpeed) / (maxImpactSpeed - minImpactSpeed));
+ 
+        Vector3 impactPos    = action.other != null
+            ? action.other.transform.position
+            : Vector3.zero;
+        Vector3 impactNormal = new Vector3(action.normal.x, 0f, action.normal.y);
+ 
+        // Keep only the strongest hit per frame
+        if (!collisionThisFrame || intensity > frameMaxIntensity)
         {
-            state = CamState.Following;
-            if(afterTransitionToFollow != null) afterTransitionToFollow();
+            frameMaxIntensity  = intensity;
+            frameImpactPos     = impactPos;
+            frameImpactNormal  = impactNormal;
+        }
+        collisionThisFrame = true;
+    }
+
+    void ProcessImpact(float intensity, Vector3 impactPos, Vector3 pImpactNormal)
+    {
+        impactWorldPos = impactPos;
+        impactNormal   = pImpactNormal;
+        hasImpact      = true;
+ 
+        //Slow-mo always fires for any registered hit
+        if (slowMoRoutine != null) StopCoroutine(slowMoRoutine);
+        slowMoRoutine = StartCoroutine(SlowMoRoutine(intensity));
+ 
+        if(intensity >= cinematicIntensityThreshold)
+        {
+            // Strong hit → cinematic side-on cut
+            ComputeCinematicTransform(impactPos, impactNormal, intensity);
+            if (cinematicRoutine != null) StopCoroutine(cinematicRoutine);
+            cinematicRoutine = StartCoroutine(CinematicCutRoutine());
+            if (zoomRoutine != null) StopCoroutine(zoomRoutine);
+            zoomT = 0f;
+        }
+        else
+        {
+            //Weak hit → top-down zoom only, no cut
+            if (zoomRoutine != null) StopCoroutine(zoomRoutine);
+            zoomRoutine = StartCoroutine(ZoomRoutine(intensity));
         }
     }
 
-    void UpdateFollowing()
+    //============================Cinematic Cuts================================================
+
+    void ComputeCinematicTransform(Vector3 impactPos, Vector3 impactNormal, float intensity)
     {
-        if(followTarget == null)
+        // Only pick a side the first time in a sequence.
+        // Mid-sequence hits (bounces, chains) reuse the same side so the camera
+        // doesn't jump across the arena when the collision normal reverses.
+        if (!hasCommittedPerp)
         {
-            BeginLinger(); 
-            return;
+            committedPerp    = Vector3.Cross(impactNormal.normalized, Vector3.up).normalized;
+            if (committedPerp == Vector3.zero) committedPerp = Vector3.right;
+            hasCommittedPerp = true;
         }
-
-        //If token came to rest, start lingering
-        if(!followTarget.isMoving)
+ 
+        cinematicTargetPos = impactPos
+                            + committedPerp * cinematicDistance
+                            + Vector3.up     * cinematicHeight;
+ 
+        Vector3 lookAt      = impactPos + Vector3.up * cinematicLookHeight;
+        cinematicTargetRot = Quaternion.LookRotation(lookAt - cinematicTargetPos, Vector3.up);
+ 
+        // Tighter FOV on harder hits
+        cinematicTargetFOV = Mathf.Lerp(cinematicFOV + 8f, cinematicFOV, intensity);
+    }
+ 
+    IEnumerator CinematicCutRoutine()
+    {
+        inCinematic = true;
+ 
+        Vector3    fromPos = transform.position;
+        Quaternion fromRot = transform.rotation;
+        float      fromFOV = cam.fieldOfView;
+ 
+        // ── Snap to cinematic ──────────────────────────────────────────────
+        float t = 0f;
+        while (t < 1f)
         {
-            BeginLinger();
-            return;
+            t += Time.unscaledDeltaTime * cinematicSnapSpeed;
+            float ease = EaseOutCubic(Mathf.Clamp01(t));
+ 
+            // Recompute target position every frame so the camera chases the token
+            Vector3 liveTarget = GetLiveTrackPoint();
+            Vector3 livePos    = liveTarget + committedPerp * cinematicDistance
+                                            + Vector3.up     * cinematicHeight;
+            Vector3 liveLookAt = liveTarget + Vector3.up * cinematicLookHeight;
+ 
+            transform.position = Vector3.Lerp(fromPos, livePos, ease);
+            transform.rotation = Quaternion.Slerp(fromRot,
+                                     Quaternion.LookRotation(liveLookAt - transform.position, Vector3.up),
+                                     ease);
+            cam.fieldOfView   = Mathf.Lerp(fromFOV, cinematicTargetFOV, ease);
+            yield return null;
         }
-
-        ComputeDesiredFollowTransform();
-
-        //Smooth punch offset back toward zero
-        punchOffset = Mathf.Lerp(punchOffset, punchTarget, Time.deltaTime * punchLerpSpeed);
-        punchTarget = Mathf.Lerp(punchTarget, 0f, Time.deltaTime * punchLerpSpeed);
-
-        //Apply punch to desired position (pull camera back along its own forward)
-        Vector3 punchedPos = desiredPos - transform.forward * punchOffset;
-
-        transform.position = Vector3.SmoothDamp(transform.position, punchedPos, ref posVelocity, positionSmoothTime);
-        transform.rotation = Quaternion.Slerp(transform.rotation, desiredRot, Time.deltaTime * rotationSmoothSpeed);
-        cam.fieldOfView = Mathf.SmoothDamp(cam.fieldOfView, desiredFOV, ref fovVelocity, fovSmoothTime);
-    }
-
-    void UpdateLingering()
-    {
-        //Keep loosely tracking the resting token position
-        if(followTarget != null)
+ 
+        // ── Hold ──────────────────────────────────────────────────────────
+        float holdElapsed = 0f;
+        while (holdElapsed < cinematicHoldDuration)
         {
-            ComputeDesiredFollowTransform();
-            transform.position = Vector3.SmoothDamp(transform.position, desiredPos, ref posVelocity, positionSmoothTime * 3f);
-            transform.rotation = Quaternion.Slerp(transform.rotation, desiredRot, Time.deltaTime * rotationSmoothSpeed * 0.5f);
+            holdElapsed += Time.unscaledDeltaTime;
+ 
+            Vector3 liveTarget = GetLiveTrackPoint();
+            Vector3 livePos    = liveTarget + committedPerp * cinematicDistance
+                                            + Vector3.up     * cinematicHeight;
+            Vector3 liveLookAt = liveTarget + Vector3.up * cinematicLookHeight;
+ 
+            // Smooth follow during hold so the camera doesn't snap if the token is fast
+            transform.position = Vector3.Lerp(transform.position, livePos,
+                                     Time.unscaledDeltaTime * cinematicSnapSpeed);
+            transform.rotation = Quaternion.Slerp(transform.rotation,
+                                     Quaternion.LookRotation(liveLookAt - transform.position, Vector3.up),
+                                     Time.unscaledDeltaTime * cinematicSnapSpeed);
+            yield return null;
         }
-
-        lingerTimer -= Time.deltaTime;
-        if(lingerTimer <= 0f)
-            BeginTransitionOut();
-    }
-
-    private Action afterTransitionToTopdown;
-    void UpdateTransitionOut()
-    {
-        transitionT += Time.deltaTime / transitionOutDuration;
-        transitionT  = Mathf.Clamp01(transitionT);
-
-        float t = transitionCurve.Evaluate(transitionT);
-
-        //Blend toward wherever the top-down anchor currently is
-        Vector3 tdPos = topDownAnchor != null ? topDownAnchor.position : transitionFromPos;
-        Quaternion tdRot = topDownAnchor != null ? topDownAnchor.rotation : transitionFromRot;
-        float tdFOV = topDownAnchor != null ? transitionFromFOV : baseFOV;
-
-        transform.position = Vector3.Lerp(transitionFromPos, tdPos, t);
-        transform.rotation = Quaternion.Slerp(transitionFromRot, tdRot, t);
-        cam.fieldOfView = Mathf.Lerp(transitionFromFOV, tdFOV, t);
-
-        if(transitionT >= 1f)
+ 
+        // ── Return to top-down ────────────────────────────────────────────
+        // Re-snapshot so if we snapped imperfectly we return from where we are
+        fromPos = transform.position;
+        fromRot = transform.rotation;
+        fromFOV = cam.fieldOfView;
+        t = 0f;
+ 
+        while (t < 1f)
         {
-            state = CamState.TopDown;
-            if(followTarget != null)
-            {
-                followTarget.onCollision.RemoveListener(OnTargetCollision);
-                followTarget = null;
-            }
-
-            if(afterTransitionToTopdown != null) afterTransitionToTopdown();
+            t += Time.unscaledDeltaTime * cinematicReturnSpeed;
+            float ease = EaseOutCubic(Mathf.Clamp01(t));
+ 
+            // Track the anchor live so the return always lands correctly
+            Vector3    toPos = topDownAnchor != null ? topDownAnchor.position : fromPos;
+            Quaternion toRot = topDownAnchor != null ? topDownAnchor.rotation : fromRot;
+ 
+            transform.position = Vector3.Lerp(fromPos, toPos, ease);
+            transform.rotation = Quaternion.Slerp(fromRot, toRot, ease);
+            cam.fieldOfView   = Mathf.Lerp(fromFOV, normalFOV, ease);
+            yield return null;
         }
+ 
+        inCinematic = false;
+        hasImpact   = false;
+        hasCommittedPerp = false;   // unlock side for next sequence
+        currentPos  = transform.position;
+        ApplyTopDownZoom(0f);
     }
 
-    //=============================Helper Methods===============================================
+    //============================Zoom================================================
 
-    void ComputeDesiredFollowTransform()
+    IEnumerator ZoomRoutine(float intensity)
     {
-        if(followTarget == null) return;
-
-        Vector3 tokenPos = followTarget.transform.position;
-        Vector2 vel2D = followTarget.velocity;
-
-        //Travel direction on XZ; fall back to camera's current right if nearly stopped
-        Vector3 travelDir = vel2D.sqrMagnitude > 0.01f
-            ? new Vector3(vel2D.x, 0f, vel2D.y).normalized
-            : transform.right;
-
-        //Side-on: camera sits to the right of the travel direction (cross with up)
-        Vector3 sideDir = Vector3.Cross(travelDir, Vector3.up).normalized;
-
-        desiredPos = tokenPos
-                    + sideDir   * sideOffset
-                    + Vector3.up * heightOffset
-                    - travelDir  * behindOffset;
-
-        Vector3 lookAt = tokenPos + Vector3.up * lookTargetHeightBias;
-        desiredRot = Quaternion.LookRotation(lookAt - desiredPos, Vector3.up);
-
-        //FOV breathes with speed
-        float speed  = vel2D.magnitude;
-        float speedT = Mathf.Clamp01(speed / fovMaxSpeed);
-        desiredFOV = Mathf.Lerp(baseFOV, maxSpeedFOV, speedT);
+        float startT  = zoomT;
+        float target  = intensity;
+        float elapsed = 0f;
+ 
+        while (elapsed < 1f)
+        {
+            elapsed += Time.unscaledDeltaTime * zoomInSpeed;
+            zoomT   = Mathf.Lerp(startT, target, Mathf.Clamp01(elapsed));
+            yield return null;
+        }
+        zoomT = target;
+ 
+        yield return new WaitForSecondsRealtime(zoomHoldDuration);
+ 
+        startT  = zoomT;
+        elapsed = 0f;
+        while (elapsed < 1f)
+        {
+            elapsed += Time.unscaledDeltaTime * zoomOutSpeed;
+            zoomT   = Mathf.Lerp(startT, 0f, Mathf.Clamp01(elapsed));
+            yield return null;
+        }
+ 
+        zoomT     = 0f;
+        hasImpact = false;
     }
-
-    void BeginLinger()
+ 
+    void ApplyTopDownZoom(float t)
     {
-        lingerTimer = lingerDuration;
-        state = CamState.Lingering;
+        if (useOrthographic)
+            cam.orthographicSize = Mathf.Lerp(normalOrthoSize, zoomedOrthoSize, t);
+        else
+            cam.fieldOfView = Mathf.Lerp(normalFOV, zoomedFOV, t);
     }
-
-    void BeginTransitionOut()
+ 
+    void UpdateTopDownPosition()
     {
-        transitionFromPos = transform.position;
-        transitionFromRot = transform.rotation;
-        transitionFromFOV = cam.fieldOfView;
-        transitionT = 0f;
-        state = CamState.TransitionOut;
+        if (topDownAnchor == null) return;
+ 
+        Vector3 anchorPos      = topDownAnchor.position;
+        transform.rotation     = topDownAnchor.rotation;
+ 
+        Vector3 targetPos;
+        if (hasImpact && zoomT > 0.01f)
+        {
+            Vector3 shiftedPos = new Vector3(impactWorldPos.x, anchorPos.y, impactWorldPos.z);
+            targetPos = Vector3.Lerp(anchorPos, shiftedPos, zoomPositionBlend);
+        }
+        else
+        {
+            targetPos = anchorPos;
+        }
+ 
+        currentPos        = Vector3.Lerp(currentPos, targetPos, Time.deltaTime * positionLerpSpeed);
+        transform.position = currentPos;
     }
 
-    //==========================Collision Response==================================================
+    //=============================Slow mo===============================================
 
-    void OnTargetCollision(CollisionAction action)
+    IEnumerator SlowMoRoutine(float intensity)
     {
-        if(action.impactSpeed < slowMoMinImpact) return;
-
-        //Trigger slow mo
-        if(!inSlowMo)
-            StartCoroutine(SlowMoRoutine());
-
-        //Trigger zoom punch; scale with impact speed
-        float punchScale = Mathf.Clamp01(action.impactSpeed / (slowMoMinImpact * 3f));
-        punchTarget = punchPullback * punchScale;
+        inSlowMo           = true;
+        float scale         = Mathf.Lerp(1f, slowMoScale, intensity);
+        Time.timeScale      = scale;
+        Time.fixedDeltaTime = 0.02f * scale;
+ 
+        yield return new WaitForSecondsRealtime(slowMoDuration);
+ 
+        targetTimeScale = 1f;
+        inSlowMo        = false;
     }
-
-    //===============================Slow Motion=============================================
-
+ 
     void UpdateSlowMo()
     {
-        //Smoothly move timeScale toward target (recover from slow mo)
-        if(Mathf.Abs(Time.timeScale - followTargetTimeScale) > 0.001f)
+        if (inSlowMo) return;
+        if (Mathf.Abs(Time.timeScale - targetTimeScale) > 0.001f)
         {
-            Time.timeScale = Mathf.MoveTowards(Time.timeScale, followTargetTimeScale, Time.unscaledDeltaTime / slowMoRecoverTime);
+            Time.timeScale      = Mathf.MoveTowards(Time.timeScale, targetTimeScale,
+                                      Time.unscaledDeltaTime / slowMoRecoverTime);
             Time.fixedDeltaTime = 0.02f * Time.timeScale;
         }
     }
 
-    IEnumerator SlowMoRoutine()
+    //=============================Helpers===============================================
+
+    static float EaseOutCubic(float t) => 1f - Mathf.Pow(1f - t, 3f);
+
+    //Returns the world position the cinematic camera should orbit around.
+    //Uses the live token position when available, falls back to the stored
+    //impact point if targetToken is unassigned or has come to rest.
+    Vector3 GetLiveTrackPoint()
     {
-        inSlowMo = true;
-        followTargetTimeScale = slowMoScale;
-        Time.timeScale = slowMoScale;
-        Time.fixedDeltaTime = 0.02f * Time.timeScale;
-
-        yield return new WaitForSecondsRealtime(slowMoDuration);
-
-        followTargetTimeScale = 1f;
-        inSlowMo = false;
-        //UpdateSlowMo() handles the smooth recovery each frame
+        if (targetToken != null)
+            return targetToken.transform.position;
+        return impactWorldPos;
     }
 
-    //===============================Gizmo=============================================
+    
+    //=============================Nice gizmo===============================================
 
 #if UNITY_EDITOR
     void OnDrawGizmosSelected()
     {
-        if (followTarget == null || topDownAnchor == null) return;
+        if (!Application.isPlaying) return;
         Gizmos.color = Color.cyan;
-        Gizmos.DrawLine(transform.position, followTarget.transform.position);
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(topDownAnchor.position, 0.3f);
+        Gizmos.DrawWireSphere(impactWorldPos, 0.4f);
+        if (topDownAnchor != null)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(topDownAnchor.position, 0.3f);
+            Gizmos.DrawLine(transform.position, topDownAnchor.position);
+        }
     }
 #endif
 }
