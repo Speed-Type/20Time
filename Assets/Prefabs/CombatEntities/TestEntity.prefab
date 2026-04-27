@@ -648,6 +648,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BaseCombatEntity
   iconController: {fileID: 6472358836463561809}
+  animController: {fileID: 8499064662104667932}
   parentPlayer: {fileID: 0}
   topdownHealthbar: {fileID: 6500285866629881326}
   entityName: Test Entity
@@ -767,13 +768,58 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: d9fcdd5ae3cae48a29e45cd9b7c619f8, type: 2}
+    - target: {fileID: 95507706189634204, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
+      propertyPath: m_UpdateMode
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 137126955238910602, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300032, guid: 69053429142f0f849839a230d1dcef63, type: 3}
+    - target: {fileID: 137255410747624522, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300208, guid: 69053429142f0f849839a230d1dcef63, type: 3}
+    - target: {fileID: 137280113006607270, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300292, guid: 69053429142f0f849839a230d1dcef63, type: 3}
+    - target: {fileID: 137453034513720916, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300052, guid: 69053429142f0f849839a230d1dcef63, type: 3}
+    - target: {fileID: 137519531750406460, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300058, guid: 69053429142f0f849839a230d1dcef63, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1482964356427942, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8499064662104667932}
   m_SourcePrefab: {fileID: 100100000, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
 --- !u!4 &7775068416600881338 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4565319668829716, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
   m_PrefabInstance: {fileID: 7779598532536645294}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &7778819479262381576 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1482964356427942, guid: 0c76e34a76c36394d97845b0df033905, type: 3}
+  m_PrefabInstance: {fileID: 7779598532536645294}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8499064662104667932
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7778819479262381576}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af09cae602d8647fd9aba651b64d8e19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterController
+  token: {fileID: 8349533533850923147}

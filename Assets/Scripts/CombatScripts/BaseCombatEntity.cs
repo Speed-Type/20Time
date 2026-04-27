@@ -6,6 +6,7 @@ public class BaseCombatEntity : MonoBehaviour
 {
     [Header("References")]
     public BaseIconInteractable iconController;
+    public GladiatorAnimManager animController;
     public Player parentPlayer;
     [SerializeField] private Image topdownHealthbar;
 
@@ -101,6 +102,8 @@ public class BaseCombatEntity : MonoBehaviour
         Debug.Log(gameObject.name + "Took " + amount + " damage");
         if(amount <= 0f) return;
 
+        animController.PlayAnim(AnimClips.TakeDamage);
+
         //Actually decrease health
         currentHealth -= amount;
 
@@ -124,6 +127,7 @@ public class BaseCombatEntity : MonoBehaviour
     //Method that is called once health hits 0
     private void Die()
     {
+        animController.PlayAnim(AnimClips.Die);
         Debug.Log("dead");
     }
 }

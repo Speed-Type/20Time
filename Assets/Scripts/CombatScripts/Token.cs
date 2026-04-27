@@ -13,21 +13,21 @@ public class Token : MonoBehaviour
 
     //Physics
     [Header("Physics")]
-    [Tooltip("Collision radius in world units (XZ plane).")]
+    [Tooltip("Collision radius in world units (XZ plane)")]
     public float radius = 0.5f;
 
-    [Tooltip("Mass used for elastic collision impulse exchange.")]
+    [Tooltip("Mass used for elastic collision impulse exchange")]
     public float mass = 1f;
 
-    [Tooltip("Velocity lost per second to friction. 0 = frictionless, 1 = stops in ~1 s.")]
+    [Tooltip("Velocity lost per second to friction. 0 = frictionless, 1 = stops in ~1 s")]
     [Range(0f, 10f)]
     public float drag = 2f;
 
-    [Tooltip("Energy kept after bouncing off a wall. 1 = perfect reflection, 0 = dead stop.")]
+    [Tooltip("Energy kept after bouncing off a wall. 1 = perfect reflection, 0 = dead stop")]
     [Range(0f, 1f)]
     public float wallRestitution = 0.85f;
 
-    [Tooltip("Energy kept after a token-token collision (applied to both tokens).")]
+    [Tooltip("Energy kept after a token-token collision (applied to both tokens)")]
     [Range(0f, 1f)]
     public float tokenRestitution = 0.9f;
 
