@@ -51,7 +51,7 @@ public class DamageIndicator : MonoBehaviour
 
         damageSum = 0;
 
-        damageSumDisplay.text = Round(damageSum).ToString();
+        damageSumDisplay.text = damageSum.ToString("F2");
     }
 
     public void AddDamage(string descriptor, float damage)
@@ -88,16 +88,11 @@ public class DamageIndicator : MonoBehaviour
 
     //============================================================================
 
-    public static float Round(float f)
-    {
-        return (float)Math.Round((double)f, 2, MidpointRounding.AwayFromZero);
-    }
-
     //Method to remove the first element of the list and increment sum accordingly
     private void Pop()
     {
         damageSum += damageTextList[0].Merge();
-        damageSumDisplay.text = Round(damageSum).ToString();
+        damageSumDisplay.text = damageSum.ToString("F2");
         damageTextList.RemoveAt(0);
     }
 }

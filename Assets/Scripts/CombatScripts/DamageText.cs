@@ -20,7 +20,7 @@ public class DamageText : MonoBehaviour
         damage = pDamage;
         shrinkTime = pShrinkTime;
 
-        text.text = descriptor + " x" + DamageIndicator.Round(damage);
+        text.text = descriptor + " x" + damage.ToString("F2");
     }
 
     public float Merge()

@@ -172,9 +172,9 @@ MonoBehaviour:
   damageSumDisplay: {fileID: 710265060}
   spawnParentTransform: {fileID: 1353867845}
   damageTextPrefab: {fileID: 1640538552281168049, guid: 50755249304914be99b4076c158b04b2, type: 3}
-  maxListLength: 5
-  timeBeforeMergeStart: 3
-  timeBetweenMerges: 0.5
+  maxListLength: 7
+  timeBeforeMergeStart: 1
+  timeBetweenMerges: 0.25
 --- !u!1 &302126534
 GameObject:
   m_ObjectHideFlags: 0
