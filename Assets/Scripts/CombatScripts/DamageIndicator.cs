@@ -14,7 +14,7 @@ public class DamageIndicator : MonoBehaviour
     public GameObject damageTextPrefab;
 
     [Header("List/Timing Settings")]
-    public int listMaxLength;
+    public int maxListLength = 5;
     public float timeBeforeMergeStart;
     public float timeBetweenMerges;
 
@@ -26,6 +26,11 @@ public class DamageIndicator : MonoBehaviour
 
     //============================================================================
 
+    private void Awake()
+    {
+        instance = this;
+    }
+
     private void Start()
     {
         damageTextList = new List<DamageText>();
@@ -36,7 +41,17 @@ public class DamageIndicator : MonoBehaviour
 
     public void Reset()
     {
+        //Clear the list
+        foreach(DamageText damageText in damageTextList)
+        {
+            Destroy(damageText.gameObject);
+        }
+
+        damageTextList = new List<DamageText>();
+
         damageSum = 0;
+
+        damageSumDisplay.text = Round(damageSum).ToString();
     }
 
     public void AddDamage(string descriptor, float damage)
@@ -45,10 +60,13 @@ public class DamageIndicator : MonoBehaviour
         DamageText damageText = Instantiate(damageTextPrefab, spawnParentTransform.position, spawnParentTransform.rotation, spawnParentTransform).GetComponent<DamageText>();
 
         //Initialize its values
-        damageText.Initialize(descriptor, damage);
+        damageText.Initialize(descriptor, damage, timeBetweenMerges);
 
         //Add to list
         damageTextList.Add(damageText);
+
+        //If we're over the limit, quickly pop one
+        if(damageTextList.Count == maxListLength) Pop();
         
         //End current merge coroutine (if it exists) and start the new one
         if(mergeCoroutine != null) StopCoroutine(mergeCoroutine);
@@ -62,9 +80,7 @@ public class DamageIndicator : MonoBehaviour
         //Repeat until damage text list is empty
         while(damageTextList.Count > 0)
         {
-            //Remove the first added one and add to sum
-            damageSum += damageTextList[0].Merge();
-            damageTextList.RemoveAt(0);
+            Pop();
 
             yield return new WaitForSeconds(timeBetweenMerges);
         }
@@ -72,8 +88,16 @@ public class DamageIndicator : MonoBehaviour
 
     //============================================================================
 
-    private int Round(float f)
+    public static float Round(float f)
     {
-        return (int)f;
+        return (float)Math.Round((double)f, 2, MidpointRounding.AwayFromZero);
+    }
+
+    //Method to remove the first element of the list and increment sum accordingly
+    private void Pop()
+    {
+        damageSum += damageTextList[0].Merge();
+        damageSumDisplay.text = Round(damageSum).ToString();
+        damageTextList.RemoveAt(0);
     }
 }

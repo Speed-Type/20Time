@@ -395,6 +395,9 @@ public class CollisionSystem : MonoBehaviour
         if(impactSpeed < striker.GetMinDamageSpeed()) return;
         float damage = impactSpeed * striker.GetDamagePerSpeedUnit();
         victim.TakeDamage(damage, instigator);
+
+        //Only here do we want to call the damage indicator displaying for any regular collisions
+        DamageIndicator.instance.AddDamage("Strike", damage);
     }
 
     //If mover is actively launched and hits resting mover on the same team, target

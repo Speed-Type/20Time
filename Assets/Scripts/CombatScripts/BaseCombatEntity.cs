@@ -95,6 +95,8 @@ public class BaseCombatEntity : MonoBehaviour
             //Wait a bit, then call token launch
             CollisionSystem.instance.tokensAreMoving = true;
             token.Launch(new Vector2(launchDirection.x, launchDirection.z), launchSpeed * speedMultiplier);
+        
+            DamageIndicator.instance.Reset();
         });
     }
 
