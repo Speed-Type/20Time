@@ -15,6 +15,7 @@ public class GladiatorAnimManager : MonoBehaviour
 
     public void PlayAnim(AnimClips anim)
     {
+        if(anim == AnimClips.Die) {animator.applyRootMotion = true;}
         animator.SetTrigger(anim.ToString());
     }
 }
