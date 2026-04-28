@@ -57,7 +57,7 @@ public class CombatCameraController : MonoBehaviour
 
     //Slow mo
     [Header("Slow Motion")]
-    [Range(0.05f, 1f)]
+    [Range(0.02f, 1f)]
     public float slowMoScale      = 0.25f;
     public float slowMoDuration   = 0.14f;  // real seconds at slow speed
     public float slowMoRecoverTime = 0.4f;  // real seconds to ease back to 1x
