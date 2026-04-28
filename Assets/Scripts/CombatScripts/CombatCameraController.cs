@@ -106,6 +106,7 @@ public class CombatCameraController : MonoBehaviour
     private Coroutine cinematicRoutine;
 
     private Token targetToken;
+    [HideInInspector] public bool inCombat = false;
 
     //============================================================================
     void Awake()
@@ -132,8 +133,8 @@ public class CombatCameraController : MonoBehaviour
  
         UpdateSlowMo();
  
-        //Top-down zoom and position only when not in a cinematic cut
-        if (!inCinematic)
+        //Top-down zoom and position only when not in a cinematic cut and not out of combat
+        if (!inCinematic && inCombat)
         {
             ApplyTopDownZoom(zoomT);
             UpdateTopDownPosition();

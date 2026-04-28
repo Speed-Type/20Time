@@ -102,16 +102,27 @@ public class TeamGenerator : MonoBehaviour
     
     private void StartMatch()
     {
-        //Spawn in all gladiators accordingly
-        for(int i = 0; i < generatedTeams.Count; i++)
+        ScreenTransitionManager.instance.Transition_VisibleToBlocked(() =>
         {
-            spawnHelpers[teamOwners[i]].SpawnGladiators(teamOwners[i], GladiatorsEnumToPrefab(generatedTeams[i].gladiatorsOnThisTeam));
-        }
+            //On complete...
+            //Spawn in all gladiators accordingly
+            for(int i = 0; i < generatedTeams.Count; i++)
+            {
+                spawnHelpers[teamOwners[i]].SpawnGladiators(teamOwners[i], GladiatorsEnumToPrefab(generatedTeams[i].gladiatorsOnThisTeam));
+            }
 
-        teamSelectScreenParent.SetActive(false);
+            //Hide team select screen
+            teamSelectScreenParent.SetActive(false);
 
-        //Do initial turn
-        CombatManager.instance.StartPlayerTurn();
+            //Set cam to top down
+            CombatCameraController.instance.inCombat = true;
+
+            //Do initial turn
+            CombatManager.instance.StartPlayerTurn();
+
+            //Transition back
+            ScreenTransitionManager.instance.Transition_BlockedToVisible();
+        });
     }
 
     private List<GameObject> GladiatorsEnumToPrefab(List<GladiatorType> enumList)
