@@ -415,37 +415,29 @@ public class CollisionSystem : MonoBehaviour
     void ResolveWalls(Token t)
     {
         if (arena == null) return;
-
-        Vector2 center    = arena.center;
-        Vector2 pos       = t.Position2D;
-        float   maxDist   = arena.radius - t.radius;   // how far the token center can stray
-
-        Vector2 fromCenter = pos - center;
-        float   dist       = fromCenter.magnitude;
-
-        if (dist <= maxDist) return;   // inside boundary, nothing to do
-
-        // Normal points inward (from wall toward center)
-        Vector2 wallNormal = dist > 1e-6f ? -fromCenter / dist : Vector2.up;
-
-        // Depenentrate — push token back inside
-        t.Position2D = center + fromCenter.normalized * maxDist;
-
-        // Reflect velocity off the circular wall
-        // Only flip if the token is moving outward (dot with outward normal > 0)
-        float velOutward = Vector2.Dot(t.velocity, -wallNormal);
+ 
+        Vector2 inwardNormal;
+        float penetration = arena.GetPenetration(t.Position2D, t.radius, out inwardNormal);
+ 
+        if (penetration <= 0f) return;   // inside boundary, nothing to do
+ 
+        // Depenetrate — push token back inside along the inward normal
+        t.Position2D += inwardNormal * penetration;
+ 
+        // Reflect velocity: only if the token is moving outward (away from centre)
+        float velOutward = Vector2.Dot(t.velocity, -inwardNormal);
         if (velOutward > 0f)
         {
-            t.velocity -= 2f * velOutward * (-wallNormal);  // reflect
-            t.velocity *= t.wallRestitution;                 // apply energy loss
+            t.velocity -= 2f * velOutward * (-inwardNormal);
+            t.velocity *= t.wallRestitution;
         }
-
+ 
         t.onCollision?.Invoke(new CollisionAction
         {
             kind        = CollisionAction.CollisionKind.Wall,
             other       = null,
             impactSpeed = t.velocity.magnitude,
-            normal      = wallNormal
+            normal      = inwardNormal
         });
     }
 

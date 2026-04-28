@@ -132,6 +132,8 @@ public class BaseCombatEntity : MonoBehaviour
     {
         //First, remove the body model from this parent object
         token.gladiatorModel.transform.SetParent(CombatManager.instance.combatEnvironmentTransform);
+        //Set its y position properly with a tween
+        LeanTween.moveY(token.gladiatorModel, CombatManager.instance.combatEnvironmentTransform.position.y + 0.05f, 0.5f);
 
         //Play the animation
         animController.PlayAnim(AnimClips.Die);

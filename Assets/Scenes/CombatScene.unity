@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 3a333eef44e294b00a69db88555c8557, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionBounces: 1
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
-  m_Sun: {fileID: 0}
+  m_Sun: {fileID: 410087040}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -155,7 +155,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: -20, y: -20}
-  m_SizeDelta: {x: 300, y: -40}
+  m_SizeDelta: {x: 400, y: -40}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &7675030
 MonoBehaviour:
@@ -173,7 +173,7 @@ MonoBehaviour:
   spawnParentTransform: {fileID: 1353867845}
   damageTextPrefab: {fileID: 1640538552281168049, guid: 50755249304914be99b4076c158b04b2, type: 3}
   maxListLength: 7
-  timeBeforeMergeStart: 1
+  timeBeforeMergeStart: 3
   timeBetweenMerges: 0.25
 --- !u!1 &302126534
 GameObject:
@@ -461,10 +461,10 @@ MonoBehaviour:
   topDownAnchor: {fileID: 1395519145}
   minImpactSpeed: 0.55
   maxImpactSpeed: 12
-  cinematicDistance: 7
-  cinematicHeight: 2.5
+  cinematicDistance: 5
+  cinematicHeight: 2
   cinematicLookHeight: 0.5
-  cinematicFOV: 50
+  cinematicFOV: 40
   cinematicSnapSpeed: 10
   cinematicReturnSpeed: 1
   cinematicHoldDuration: 1
@@ -604,13 +604,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.62088513, y: -0.19826688, z: 0.16636564, w: 0.7399422}
+  m_LocalRotation: {x: 0.19524647, y: -0.8535261, z: 0.3770866, w: 0.30195653}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 80, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: 49.607, y: -145.375, z: -9.376}
 --- !u!114 &410087042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -817,8 +817,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278190263
+  m_fontColor: {r: 0.7169812, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -841,7 +841,7 @@ MonoBehaviour:
   m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 0
+  m_fontStyle: 1
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -975,7 +975,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4c8c1987e16f4e67b48ddbe52de09fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArenaWalls
-  radius: 5
+  radiusX: 8
+  radiusZ: 5.75
 --- !u!1 &721801555
 GameObject:
   m_ObjectHideFlags: 0
@@ -1367,9 +1368,9 @@ MonoBehaviour:
     m_Bottom: 0
   m_ChildAlignment: 0
   m_Spacing: 5
-  m_ChildForceExpandWidth: 1
+  m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 0
-  m_ChildControlWidth: 0
+  m_ChildControlWidth: 1
   m_ChildControlHeight: 1
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
