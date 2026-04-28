@@ -73,7 +73,7 @@ public class CollisionSystem : MonoBehaviour
             tokensAreMoving = false;
 
             //End the current player's turn
-            CombatManager.instance.GetCurrentPlayer().EndTurn();
+            CombatManager.instance.EndPlayerTurn();
 
             //Reset all token effects
             ResetTokenEffects();

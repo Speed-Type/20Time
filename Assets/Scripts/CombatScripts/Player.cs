@@ -32,7 +32,7 @@ public class Player : MonoBehaviour
         }
     }
 
-    public void EndTurn()
+    public void PauseTurn()
     {
         isThisPlayersTurn = false;
 
@@ -41,8 +41,6 @@ public class Player : MonoBehaviour
         {
             entity.SetInteractable(false);
         }
-
-        CombatManager.instance.EndPlayerTurn();
     }
 
     //============================================================================

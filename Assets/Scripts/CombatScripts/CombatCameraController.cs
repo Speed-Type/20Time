@@ -5,6 +5,7 @@ using System;
 [RequireComponent(typeof(Camera))]
 public class CombatCameraController : MonoBehaviour
 {
+    public static CombatCameraController instance;
     //============================================================================
 
     //References
@@ -109,6 +110,8 @@ public class CombatCameraController : MonoBehaviour
     //============================================================================
     void Awake()
     {
+        instance = this;
+
         cam = GetComponent<Camera>();
         currentPos = topDownAnchor != null ? topDownAnchor.position : transform.position;
         
@@ -171,7 +174,7 @@ public class CombatCameraController : MonoBehaviour
     {
         //Don't do any impact effects if we're below the speed threshold or this is a wall hit
         if (action.impactSpeed < minImpactSpeed || action.other == null) return;
- 
+
         float intensity = Mathf.Clamp01(
             (action.impactSpeed - minImpactSpeed) / (maxImpactSpeed - minImpactSpeed));
  
@@ -179,7 +182,7 @@ public class CombatCameraController : MonoBehaviour
             ? action.other.transform.position
             : Vector3.zero;
         Vector3 impactNormal = new Vector3(action.normal.x, 0f, action.normal.y);
- 
+
         // Keep only the strongest hit per frame
         if (!collisionThisFrame || intensity > frameMaxIntensity)
         {
@@ -187,6 +190,12 @@ public class CombatCameraController : MonoBehaviour
             frameImpactPos     = impactPos;
             frameImpactNormal  = impactNormal;
         }
+        collisionThisFrame = true;
+    }
+
+    public void DeathImpact()
+    {
+        frameMaxIntensity = 1;
         collisionThisFrame = true;
     }
 

@@ -35,9 +35,6 @@ public class CombatManager : MonoBehaviour
     private void Start()
     {
         currentPlayerIndex = 0;
-
-        //Do initial turn
-        StartPlayerTurn();
     }
 
     //============================Turn Management=================================
@@ -66,7 +63,7 @@ public class CombatManager : MonoBehaviour
         //Switch cam back to top-down
         SwitchCamToTopDown();
 
-        //End game
+        //End game?
         CheckGameEnd();
     }
 
@@ -107,6 +104,11 @@ public class CombatManager : MonoBehaviour
 
     public Player GetCurrentPlayer()
     {
-        return playerList[currentPlayerIndex];
+        return GetPlayer(currentPlayerIndex);
+    }
+
+    public Player GetPlayer(int index)
+    {
+        return playerList[index];
     }
 }

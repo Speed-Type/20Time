@@ -90,6 +90,8 @@ public class BaseCombatEntity : MonoBehaviour
         Debug.Log(launchDirection);
         Debug.Log(launchSpeed);
 
+        parentPlayer.PauseTurn(); //Stop any interactability
+
         CombatManager.instance.SwitchCamToFollow(token, () =>
         {
             //Wait a bit, then call token launch
@@ -137,6 +139,7 @@ public class BaseCombatEntity : MonoBehaviour
 
         //Play the animation
         animController.PlayAnim(AnimClips.Die);
+        CombatCameraController.instance.DeathImpact(); //do cinematic zoom-in
 
         //Remove this token
         CollisionSystem.instance.Unregister(token); //This is already handled in Token, but just in case
