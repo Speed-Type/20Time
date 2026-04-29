@@ -93,11 +93,14 @@ public class TeamGenerator : MonoBehaviour
 
     private void SelectRandomPlayer()
     {
+        //Pick a random player and remove it from playersLeftToChoose
         int index = UnityEngine.Random.Range(0, playersLeftToChoose.Count);
         currentChoosingPlayer = playersLeftToChoose[index];
         playersLeftToChoose.RemoveAt(index);
 
+        //Update text content and color
         choosingPlayerText.text = "Player " + (currentChoosingPlayer + 1) + ": Select a team";
+        choosingPlayerText.color = CombatManager.instance.GetPlayer(currentChoosingPlayer).playerColor;
     }
     
     private void StartMatch()

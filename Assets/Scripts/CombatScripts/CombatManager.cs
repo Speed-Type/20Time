@@ -103,6 +103,9 @@ public class CombatManager : MonoBehaviour
         {
             //A player won
             EndGame("Player " + (playersStillIn[0].playerID + 1) + " Win");
+
+            //Also set the color of the game result text to the winning player's color
+            gameResultText.color = playersStillIn[0].playerColor;
         }
         else if(playersStillIn.Count == 0)
         {
@@ -128,6 +131,7 @@ public class CombatManager : MonoBehaviour
         {
             //Fade in the end game UI
             SetCanvasGroupActive(gameEndCanvasGroup, true);
+            gameEndCanvasGroup.alpha = 0;
             LeanTween.value(0, 1, gameEndUIFadeTime)
             .setOnUpdate((float val) =>
             {
