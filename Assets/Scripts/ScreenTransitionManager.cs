@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class ScreenTransitionManager : MonoBehaviour
 {
@@ -13,6 +14,7 @@ public class ScreenTransitionManager : MonoBehaviour
     [Header("Transition Parameters")]
     public float introTransitionDelay;
     public float transitionLength;
+    public float afterFadeToBlackDelay;
 
     //============================================================================
 
@@ -26,7 +28,22 @@ public class ScreenTransitionManager : MonoBehaviour
         LeanTween.value(0, 0, introTransitionDelay).setOnComplete(() => {Transition_BlockedToVisible();});
     }
 
-    //============================================================================
+    //=================================Scene Management===========================================
+
+    public void TransitionToScene(string sceneName)
+    {
+        Transition_VisibleToBlocked(() =>
+        {
+            SceneManager.LoadScene(sceneName);
+        });
+    }
+
+    public void ReloadScene()
+    {
+        TransitionToScene(SceneManager.GetActiveScene().name);
+    }
+
+    //===============================Transitions=============================================
 
     public void Transition_BlockedToVisible(Action onComplete = null)
     {
@@ -35,7 +52,10 @@ public class ScreenTransitionManager : MonoBehaviour
 
     public void Transition_VisibleToBlocked(Action onComplete = null)
     {
-        BaseTransition(0, 1, onComplete);
+        BaseTransition(0, 1, () =>
+        {
+            LeanTween.delayedCall(afterFadeToBlackDelay, onComplete);
+        });
     }
 
     //============================================================================

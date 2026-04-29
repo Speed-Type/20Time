@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class CombatManager : MonoBehaviour
@@ -15,11 +16,18 @@ public class CombatManager : MonoBehaviour
 
     [Header("Component References")]
     public Canvas combatCanvas;
+    public CanvasGroup screenspaceCombatUICanvasGroup;
 
     [Header("Object References")]
     public Transform combatCanvasTransform;
     public Transform combatEnvironmentTransform;
     public Transform defaultSpawnTransform;
+
+    [Header("Game End")]
+    [SerializeField] private CanvasGroup gameEndCanvasGroup;
+    [SerializeField] private TMP_Text gameResultText;
+    [SerializeField] private float delayBeforeShowingGameEndUI;
+    [SerializeField] private float gameEndUIFadeTime;
 
     //============================================================================
     [HideInInspector] public CanvasGroup combatCanvasGroup;
@@ -35,6 +43,10 @@ public class CombatManager : MonoBehaviour
     private void Start()
     {
         currentPlayerIndex = 0;
+
+        //Hide necessary UI
+        SetCanvasGroupActive(screenspaceCombatUICanvasGroup, false);
+        SetCanvasGroupActive(gameEndCanvasGroup, false);
     }
 
     //============================Turn Management=================================
@@ -45,14 +57,15 @@ public class CombatManager : MonoBehaviour
 
     public void StartPlayerTurn()
     {
+        SetCanvasGroupActive(screenspaceCombatUICanvasGroup, true);
         playerList[currentPlayerIndex].StartTurn();
-        combatCanvasGroup.alpha = 1;
+        SetCanvasGroupActive(combatCanvasGroup, true);
     }
 
     //Called upon valid token launch
     public void SwitchCamToFollow(Token launchedToken, Action onCompleteAction = null)
     {
-        combatCanvasGroup.alpha = 0;
+        SetCanvasGroupActive(combatCanvasGroup, false);
         camController.EnterFollowMode(launchedToken, onCompleteAction);
     }
 
@@ -62,9 +75,6 @@ public class CombatManager : MonoBehaviour
 
         //Switch cam back to top-down
         SwitchCamToTopDown();
-
-        //End game?
-        CheckGameEnd();
     }
 
     public void SwitchCamToTopDown()
@@ -92,12 +102,53 @@ public class CombatManager : MonoBehaviour
         if(playersStillIn.Count == 1)
         {
             //A player won
+            EndGame("Player " + (playersStillIn[0].playerID + 1) + " Win");
         }
         else if(playersStillIn.Count == 0)
         {
             //A tie
+            EndGame("Players Tied");
         }
         //Otherwise, game continues
+    }
+
+    private void EndGame(string resultText)
+    {
+        //Set results text
+        gameResultText.text = resultText;
+
+        //Freeze camera
+        CombatCameraController.instance.inCombat = false;
+
+        //Freeze physics system
+        CollisionSystem.instance.simulatePhysics = false;
+
+        //Tween in the end game UI
+        LeanTween.delayedCall(delayBeforeShowingGameEndUI, () =>
+        {
+            //Fade in the end game UI
+            SetCanvasGroupActive(gameEndCanvasGroup, true);
+            LeanTween.value(0, 1, gameEndUIFadeTime)
+            .setOnUpdate((float val) =>
+            {
+                gameEndCanvasGroup.alpha = val;
+            })
+            .setIgnoreTimeScale(true);
+
+            //Fade out the combat UI
+            LeanTween.value(1, 0, gameEndUIFadeTime)
+            .setOnUpdate((float val) =>
+            {
+                screenspaceCombatUICanvasGroup.alpha = val;
+            })
+            .setOnUpdate((float val) =>
+            {
+                //At the end, set the combat UI completely not interactable
+                SetCanvasGroupActive(screenspaceCombatUICanvasGroup, false);
+            })
+            .setIgnoreTimeScale(true);
+        })
+        .setIgnoreTimeScale(true);
     }
 
     //============================Getters/Setters=================================
@@ -110,5 +161,14 @@ public class CombatManager : MonoBehaviour
     public Player GetPlayer(int index)
     {
         return playerList[index];
+    }
+
+    //============================Helper methods=================================
+
+    private void SetCanvasGroupActive(CanvasGroup group, bool active)
+    {
+        group.alpha = active ? 1 : 0;
+        group.blocksRaycasts = active;
+        group.interactable = active;
     }
 }

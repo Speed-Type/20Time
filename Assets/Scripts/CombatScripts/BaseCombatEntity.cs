@@ -145,6 +145,9 @@ public class BaseCombatEntity : MonoBehaviour
         CollisionSystem.instance.Unregister(token); //This is already handled in Token, but just in case
         parentPlayer.ownedEntities.Remove(this);
 
+        //Check for game over
+        CombatManager.instance.CheckGameEnd();
+
         //Destroy objects
         Destroy(iconController.gameObject);
         Destroy(this.gameObject);

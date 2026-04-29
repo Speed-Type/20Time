@@ -32,6 +32,7 @@ public class CollisionSystem : MonoBehaviour
     //============================================================================
 
     [HideInInspector] public bool tokensAreMoving;
+    [HideInInspector] public bool simulatePhysics = true;
 
     readonly List<Token> allTokens = new List<Token>();
 
@@ -57,7 +58,7 @@ public class CollisionSystem : MonoBehaviour
 
     void FixedUpdate()
     {
-        if(!tokensAreMoving) return;
+        if(!tokensAreMoving || !simulatePhysics) return;
 
         bool restCheck = true;
         foreach(Token t in allTokens)
