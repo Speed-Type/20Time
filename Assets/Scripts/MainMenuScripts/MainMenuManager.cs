@@ -2,15 +2,23 @@ using UnityEngine;
 
 public class MainMenuManager : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+
+    //============================================================================
+
+    private void Start()
     {
         
     }
 
-    // Update is called once per frame
-    void Update()
+    //============================Popup System================================================
+
+    public void OpenPopup(GameObject target)
     {
-        
+        target.SetActive(true);
+    }
+
+    public void ClosePopup(GameObject target)
+    {
+        target.SetActive(false);
     }
 }
