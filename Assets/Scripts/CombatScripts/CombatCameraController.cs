@@ -58,7 +58,7 @@ public class CombatCameraController : MonoBehaviour
 
     //Slow mo
     [Header("Slow Motion")]
-    [Range(0.02f, 1f)]
+    [Range(0.005f, 1f)]
     public float slowMoScale      = 0.25f;
     public float slowMoDuration   = 0.14f;  // real seconds at slow speed
     public float slowMoRecoverTime = 0.4f;  // real seconds to ease back to 1x
@@ -208,7 +208,7 @@ public class CombatCameraController : MonoBehaviour
  
         //Slow-mo always fires for any registered hit
         if (slowMoRoutine != null) StopCoroutine(slowMoRoutine);
-        slowMoRoutine = StartCoroutine(SlowMoRoutine(intensity));
+        slowMoRoutine = StartCoroutine(SlowMoRoutine(intensity >= cinematicIntensityThreshold ? 1 : intensity));
  
         if(intensity >= cinematicIntensityThreshold)
         {
@@ -312,13 +312,17 @@ public class CombatCameraController : MonoBehaviour
         {
             t += Time.unscaledDeltaTime * cinematicReturnSpeed;
             float ease = EaseOutCubic(Mathf.Clamp01(t));
- 
-            // Track the anchor live so the return always lands correctly
-            Vector3    toPos = topDownAnchor != null ? topDownAnchor.position : fromPos;
-            Quaternion toRot = topDownAnchor != null ? topDownAnchor.rotation : fromRot;
- 
-            transform.position = Vector3.Lerp(fromPos, toPos, ease);
-            transform.rotation = Quaternion.Slerp(fromRot, toRot, ease);
+
+            if(inCombat)
+            {
+                // Track the anchor live so the return always lands correctly
+                Vector3    toPos = topDownAnchor != null ? topDownAnchor.position : fromPos;
+                Quaternion toRot = topDownAnchor != null ? topDownAnchor.rotation : fromRot;
+    
+                transform.position = Vector3.Lerp(fromPos, toPos, ease);
+                transform.rotation = Quaternion.Slerp(fromRot, toRot, ease);
+            }
+            
             cam.fieldOfView   = Mathf.Lerp(fromFOV, normalFOV, ease);
             yield return null;
         }

@@ -121,21 +121,61 @@ public class Token : MonoBehaviour
 
     //============================================================================
 
+    private int modelRotationTween;
     public void SetModelDirection(CollisionAction collisionAction = new CollisionAction())
     {
+        //Cancel any currently running tweens
+        LeanTween.cancel(modelRotationTween);
+
         if(isOriginalLaunched)
         {
-            //Face the direction of velocity
-            gladiatorModel.transform.forward = new Vector3(velocity.x, 0, velocity.y);
-            //gladiatorModel.transform.rotation = Quaternion.Euler(0, Vector3.Angle(Vector3.right, velocity), 0);
-            Debug.Log("original collision");
+            if(collisionAction.kind == CollisionAction.CollisionKind.EnemyToken) //Case 1: Colliding into enemy
+            {
+                //Face the thing that bumped you (immediate)
+                gladiatorModel.transform.forward = (collisionAction.other.transform.position - gameObject.transform.position).normalized;
+                //gladiatorModel.transform.forward = new Vector3(-collisionAction.normal.x, 0, -collisionAction.normal.y);
+
+                //Wait for cinematic to be over
+                modelRotationTween = LeanTween.delayedCall(CombatCameraController.instance.cinematicHoldDuration, () =>
+                {
+                    //Tween back to rotate to face velocity again
+                    Vector3 startVector = gladiatorModel.transform.forward;
+                    Vector3 endVector = new Vector3(velocity.x, 0, velocity.y);
+                    
+                    modelRotationTween = LeanTween.value(0, 1, 0.15f)
+                    .setOnUpdate((float val) =>
+                    {
+                        gladiatorModel.transform.forward = (1 - val) * startVector + (val) * endVector;
+                    })
+                    .setIgnoreTimeScale(true)
+                    .id;
+                })
+                .setIgnoreTimeScale(true)
+                .id;
+            }
+            else //Case 2: Colliding into wall or friendly token
+            {
+                //Face the direction of velocity (tweened)
+                Vector3 startVector = gladiatorModel.transform.forward;
+                Vector3 endVector = new Vector3(velocity.x, 0, velocity.y);
+                
+                modelRotationTween = LeanTween.value(0, 1, 0.15f)
+                .setOnUpdate((float val) =>
+                {
+                    gladiatorModel.transform.forward = (1 - val) * startVector + (val) * endVector;
+                })
+                .setIgnoreTimeScale(true)
+                .id;
+            }
         }
         else
         {
-            //Face the thing that bumped you
-            gladiatorModel.transform.forward = new Vector3(-collisionAction.normal.x, 0, -collisionAction.normal.y);
-            //gladiatorModel.transform.rotation = Quaternion.LookRotation(collisionAction.normal);
-            Debug.Log("other collision");
+            if(collisionAction.kind != CollisionAction.CollisionKind.Wall)
+            {
+                //Face the thing that bumped you (immediate)
+                gladiatorModel.transform.forward = (collisionAction.other.transform.position - gameObject.transform.position).normalized;
+                //gladiatorModel.transform.forward = new Vector3(-collisionAction.normal.x, 0, -collisionAction.normal.y);
+            }
         }
     }
 }

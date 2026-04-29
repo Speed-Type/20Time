@@ -206,6 +206,54 @@ MonoBehaviour:
   maxListLength: 7
   timeBeforeMergeStart: 3
   timeBetweenMerges: 0.25
+--- !u!1 &21235489
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 21235491}
+  - component: {fileID: 21235490}
+  m_Layer: 0
+  m_Name: SceneTransitionManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &21235490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 21235489}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c5cdf49f54b84204a90183e60363851, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScreenTransitionManager
+  transitionCanvasGroup: {fileID: 710214591}
+  introTransitionDelay: 1
+  transitionLength: 1
+  afterFadeToBlackDelay: 1
+--- !u!4 &21235491
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 21235489}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &38297533
 GameObject:
   m_ObjectHideFlags: 0
@@ -594,13 +642,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.026440255, y: 10.952205, z: 0.02}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 7.343236, y: 0.91207975, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
 --- !u!114 &330585547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -660,7 +708,7 @@ MonoBehaviour:
   topDownAnchor: {fileID: 1395519145}
   minImpactSpeed: 0.55
   maxImpactSpeed: 12
-  cinematicDistance: 5
+  cinematicDistance: 4
   cinematicHeight: 2
   cinematicLookHeight: 0.5
   cinematicFOV: 40
@@ -675,7 +723,7 @@ MonoBehaviour:
   zoomHoldDuration: 0.3
   zoomPositionBlend: 0.45
   positionLerpSpeed: 6
-  slowMoScale: 0.03
+  slowMoScale: 0.05
   slowMoDuration: 0.8
   slowMoRecoverTime: 0.35
   useOrthographic: 0
@@ -1429,7 +1477,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 710214589}
-  - component: {fileID: 710214590}
   - component: {fileID: 710214591}
   m_Layer: 5
   m_Name: ScreenTransitionManager
@@ -1458,22 +1505,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &710214590
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 710214588}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c5cdf49f54b84204a90183e60363851, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ScreenTransitionManager
-  transitionCanvasGroup: {fileID: 710214591}
-  introTransitionDelay: 1
-  transitionLength: 1
-  afterFadeToBlackDelay: 1
 --- !u!225 &710214591
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -1703,6 +1734,7 @@ MonoBehaviour:
   depenetrationFactor: 0.5
   knockbackElasticityMultiplier: 0.5
   tokensAreMoving: 0
+  simulatePhysics: 1
 --- !u!114 &711398210
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1899,9 +1931,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 721801556}
-        m_TargetAssemblyTypeName: Player, Assembly-CSharp
-        m_MethodName: SpawnEntity
+      - m_Target: {fileID: 21235490}
+        m_TargetAssemblyTypeName: ScreenTransitionManager, Assembly-CSharp
+        m_MethodName: ReloadScene
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2544,16 +2576,16 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 721801556}
-        m_TargetAssemblyTypeName: Player, Assembly-CSharp
-        m_MethodName: SpawnEntity
-        m_Mode: 1
+      - m_Target: {fileID: 21235490}
+        m_TargetAssemblyTypeName: ScreenTransitionManager, Assembly-CSharp
+        m_MethodName: TransitionToScene
+        m_Mode: 5
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 1
           m_FloatArgument: 0
-          m_StringArgument: 
+          m_StringArgument: MainMenu
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &1321436620
@@ -3807,3 +3839,4 @@ SceneRoots:
   - {fileID: 2113019022}
   - {fileID: 711398208}
   - {fileID: 1356075206}
+  - {fileID: 21235491}

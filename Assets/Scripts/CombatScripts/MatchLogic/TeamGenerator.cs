@@ -117,11 +117,12 @@ public class TeamGenerator : MonoBehaviour
             //Set cam to top down
             CombatCameraController.instance.inCombat = true;
 
-            //Do initial turn
-            CombatManager.instance.StartPlayerTurn();
-
             //Transition back
-            ScreenTransitionManager.instance.Transition_BlockedToVisible();
+            ScreenTransitionManager.instance.Transition_BlockedToVisible(() =>
+            {
+                //Do initial turn
+                CombatManager.instance.StartPlayerTurn();
+            });
         });
     }
 
