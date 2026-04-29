@@ -636,6 +636,11 @@ MonoBehaviour:
   healthbar: {fileID: 6500285866629881326}
   baseplate: {fileID: 8460241295616195678}
   entityName: Test Entity
+  entityShortDescription: This is a test entity with no special properties. If you're
+    reading this somehow, something has gone horribly wrong with the game.
+  entityLongDescription: This is a test entity with no special properties. This is
+    also the long description for this entitty. If you're reading this somehow, something
+    has gone horribly wrong with the game.
   isStatic: 0
   maxPullback: 5
   speedMultiplier: 15

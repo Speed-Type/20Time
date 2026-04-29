@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler
+public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHandler, IPointerUpHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [Tooltip("Child TrajectoryArrow component for preview drawing")]
     [SerializeField] private TrajectoryArrow trajectoryArrow;
@@ -103,6 +103,20 @@ public class BaseIconInteractable : MonoBehaviour, IPointerDownHandler, IDragHan
         float launchSpeed = (dragOffset.magnitude / baseCombatEntity.maxPullback);
 
         onReleaseAction(launchDirection, launchSpeed);
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if(isDragging) return;
+
+        //Show tooltip
+        string healthText = baseCombatEntity.currentHealth.ToString("F2") + "/" + baseCombatEntity.maxHealth.ToString("F2");
+        TooltipManager.instance.ShowTooltip(baseCombatEntity.entityName, healthText, baseCombatEntity.entityShortDescription);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        TooltipManager.instance.HideTooltip();
     }
 
     //=============================Helper Methods=================================

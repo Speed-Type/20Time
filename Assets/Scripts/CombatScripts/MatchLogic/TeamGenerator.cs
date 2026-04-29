@@ -14,17 +14,21 @@ public class TeamGenerator : MonoBehaviour
         public List<int> matchups;
     }
 
+    public static TeamGenerator instance;
+
     //============================================================================
 
     [Header("UI References")]
     [SerializeField] private GameObject teamSelectScreenParent;
-    [SerializeField] private List<GameObject> teamSelectButtons;
     [SerializeField] private TMP_Text choosingPlayerText;
 
     //============================================================================
 
     [Header("Team Spawn Helpers (one for each player)")]
     public List<TeamSpawner> spawnHelpers;
+    
+    [Header("Team Display Objects")]
+    [SerializeField] private List<TeamDisplay> teamDisplaysList;
 
     [Header("Gladiators")]
     public List<GameObject> gladiatorList;
@@ -40,6 +44,11 @@ public class TeamGenerator : MonoBehaviour
     private List<int> playersLeftToChoose;
 
     //============================================================================
+
+    private void Awake()
+    {
+        instance = this;
+    }
 
     private void Start()
     {
@@ -70,13 +79,23 @@ public class TeamGenerator : MonoBehaviour
             //Generate a team from the matchup list of the previously generated team
             generatedTeams.Add(teamList[generatedTeams[i-1].matchups[UnityEngine.Random.Range(0, generatedTeams[i-1].matchups.Count)]]);
         }
+
+        //For each of the generated teams, display properly
+        for(int i = 0; i < generatedTeams.Count; i++)
+        {
+            teamDisplaysList[i].DisplayGladiators(generatedTeams[i].gladiatorsOnThisTeam);
+        }
     }
 
     public void SelectTeam(int teamToSelect)
     {
         teamOwners[teamToSelect - 1] = currentChoosingPlayer; //Set team owner
 
-        teamSelectButtons[teamToSelect - 1].SetActive(false); //hide the button for this team
+        //Make this button no longer active
+        teamDisplaysList[teamToSelect - 1].SetButtonInteractable(false);
+
+        //Also fill in player signature
+        teamDisplaysList[teamToSelect - 1].SetSignature(currentChoosingPlayer);
 
         //Check to start match
         if(playersLeftToChoose.Count == 0)
@@ -144,5 +163,8 @@ public class TeamGenerator : MonoBehaviour
 
 public enum GladiatorType
 {
-    Test
+    Test,
+    Secutor,
+    Thrace,
+    Murmillo
 }

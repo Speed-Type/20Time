@@ -12,7 +12,11 @@ public class BaseCombatEntity : MonoBehaviour
     [SerializeField] private GameObject baseplate;
 
     [Header("Entity Info")]
-    public String entityName;
+    public string entityName;
+    [TextArea(3,5)]
+    public string entityShortDescription;
+    [TextArea(5,8)]
+    public string entityLongDescription;
 
     [Header("General Parameters")]
     [Tooltip("Whether or not a player can ever move this entity")]

@@ -17,6 +17,7 @@ public class CombatManager : MonoBehaviour
     [Header("Component References")]
     public Canvas combatCanvas;
     public CanvasGroup screenspaceCombatUICanvasGroup;
+    public TMP_Text currentTurnDisplay;
 
     [Header("Object References")]
     public Transform combatCanvasTransform;
@@ -47,6 +48,11 @@ public class CombatManager : MonoBehaviour
         //Hide necessary UI
         SetCanvasGroupActive(screenspaceCombatUICanvasGroup, false);
         SetCanvasGroupActive(gameEndCanvasGroup, false);
+
+        //Initialize turn text
+        //Also set the current turn text
+        currentTurnDisplay.text = "Player " + (currentPlayerIndex + 1) + "'s turn";
+        currentTurnDisplay.color = playerList[currentPlayerIndex].playerColor;
     }
 
     //============================Turn Management=================================
@@ -60,6 +66,10 @@ public class CombatManager : MonoBehaviour
         SetCanvasGroupActive(screenspaceCombatUICanvasGroup, true);
         playerList[currentPlayerIndex].StartTurn();
         SetCanvasGroupActive(combatCanvasGroup, true);
+
+        //Also set the current turn text
+        currentTurnDisplay.text = "Player " + (currentPlayerIndex + 1) + "'s turn";
+        currentTurnDisplay.color = playerList[currentPlayerIndex].playerColor;
     }
 
     //Called upon valid token launch
